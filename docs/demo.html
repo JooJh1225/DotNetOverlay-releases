@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="icon" href="assets/app.ico" sizes="any">
+<link rel="stylesheet" href="_ds/modernist-e7139c7d-d0a7-4170-97c4-ce34c79277ce/styles.css">
+<script src="_ds/modernist-e7139c7d-d0a7-4170-97c4-ce34c79277ce/_ds_bundle.js"></script>
+<style>
+@font-face{font-family:'JetBrains Mono';src:url('Fonts/JetBrainsMono-Regular.ttf') format('truetype');font-weight:400;font-display:block}
+@font-face{font-family:'JetBrains Mono';src:url('Fonts/JetBrainsMono-Bold.ttf') format('truetype');font-weight:700;font-display:block}
+@font-face{font-family:'Pretendard';src:url('Fonts/Pretendard-Regular.otf') format('opentype');font-weight:400;font-display:block}
+@font-face{font-family:'Pretendard';src:url('Fonts/Pretendard-Bold.otf') format('opentype');font-weight:700;font-display:block}
+
+/* 오버레이 토큰 — 원본은 앱 코드(Controls/Palette.cs · Controls/ViewTheme.cs)다.
+   여기 값은 그 사본이며, 어긋나면 코드가 우선한다. */
+:root{
+  --bar:#0D111A;            /* 세션 바 */
+  --surface:#131824;        /* 데이터 행 · 패널 면 */
+  --text:#E6EAF0;
+  --table-dim:#A0A8B4;      /* 표 안 흐린 텍스트 */
+  --micro:#8A929E;          /* 마이크로 라벨 */
+  --hairline:rgba(230,234,240,.07);
+  --line-strong:#6C717A;    /* 0선 · 눈금 */
+  --line-ring:#636872;      /* 링 · 림 */
+  --throttle:#3FC380; --clutch:#5BA8F0; --pit:#E6B450; --wind-cap:#7FC4FF;
+}
+body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body)}
+a{color:var(--color-accent-700);text-decoration:none}
+a:hover{color:var(--color-accent);text-decoration:underline}
+@keyframes a2-pulse{0%,100%{opacity:.22}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){[style*="a2-pulse"]{animation:none!important;opacity:.85}}
+</style>
+</helmet>
+<section style="padding:32px 44px 56px;background:var(--color-bg);max-width:1920px">
+<div id="ctl">
+<div style="display:flex;align-items:center;gap:18px;width:1152px;margin:0 0 10px;padding:0 0 10px;border-bottom:2px solid var(--color-divider)">
+<span style="font:700 10px var(--font-body);letter-spacing:.1em;color:var(--color-neutral-700)">창 표시</span>
+<div style="display:flex;align-items:center;gap:14px">
+<sc-for list="{{ winToggles }}" as="t" hint-placeholder-count="5">
+<label style="display:flex;align-items:center;gap:6px;font:400 12px var(--font-body);color:var(--color-text);cursor:pointer"><input type="checkbox" checked="{{ t.on }}" onChange="{{ t.toggle }}" style="accent-color:var(--color-accent);margin:0">{{ t.label }}</label>
+</sc-for>
+</div>
+<label style="display:flex;align-items:center;gap:6px;margin-left:auto;font:400 12px var(--font-body);color:var(--color-text);cursor:pointer"><input type="checkbox" checked="{{ arrange }}" onChange="{{ toggleArrange }}" style="accent-color:var(--color-accent);margin:0">배치 모드 (파란 외곽선)</label>
+</div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 26px;width:1152px;margin:0 0 14px;padding:0 0 12px;border-bottom:1px solid var(--color-divider)">
+<div style="display:flex;flex:0 0 auto;align-items:center;gap:9px">
+<span style="font:700 10px var(--font-body);letter-spacing:.1em;color:var(--color-neutral-700)">RELATIVE 티어</span>
+<div class="seg">
+<sc-for list="{{ relTierCtl }}" as="o" hint-placeholder-count="3">
+<label class="seg-opt" style="font-family:var(--font-body);font-weight:600;font-size:12px;white-space:nowrap;padding:6px 10px"><input type="radio" checked="{{ o.on }}" onChange="{{ o.pick }}">{{ o.label }}</label>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;flex:0 0 auto;align-items:center;gap:9px">
+<span style="font:700 10px var(--font-body);letter-spacing:.1em;color:var(--color-neutral-700)">STANDINGS 티어</span>
+<div class="seg">
+<sc-for list="{{ stdTierCtl }}" as="o" hint-placeholder-count="3">
+<label class="seg-opt" style="font-family:var(--font-body);font-weight:600;font-size:12px;white-space:nowrap;padding:6px 10px"><input type="radio" checked="{{ o.on }}" onChange="{{ o.pick }}">{{ o.label }}</label>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;flex:0 0 auto;align-items:center;gap:9px">
+<span style="font:700 10px var(--font-body);letter-spacing:.1em;color:var(--color-neutral-700)">INPUT 티어</span>
+<div class="seg">
+<sc-for list="{{ inTierCtl }}" as="o" hint-placeholder-count="3">
+<label class="seg-opt" style="font-family:var(--font-body);font-weight:600;font-size:12px;white-space:nowrap;padding:6px 10px"><input type="radio" checked="{{ o.on }}" onChange="{{ o.pick }}">{{ o.label }}</label>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;flex:0 0 auto;align-items:center;gap:14px">
+<span style="font:700 10px var(--font-body);letter-spacing:.1em;color:var(--color-neutral-700)">INPUT 표시</span>
+<sc-for list="{{ inOpts }}" as="o" hint-placeholder-count="3">
+<label style="display:flex;align-items:center;gap:6px;font:400 12px var(--font-body);color:var(--color-text);cursor:pointer"><input type="checkbox" checked="{{ o.on }}" onChange="{{ o.toggle }}" style="accent-color:var(--color-accent);margin:0">{{ o.label }}</label>
+</sc-for>
+</div>
+<div style="display:flex;flex:0 0 auto;align-items:center;gap:9px">
+<span style="font:700 10px var(--font-body);letter-spacing:.1em;color:var(--color-neutral-700);opacity:{{ wheelCtlDim }}">스티어링 휠 종류</span>
+<div class="seg" style="opacity:{{ wheelCtlDim }};pointer-events:{{ wheelCtlHit }}">
+<sc-for list="{{ wheelCtl }}" as="o" hint-placeholder-count="3">
+<label class="seg-opt" style="font-family:var(--font-body);font-weight:600;font-size:12px;white-space:nowrap;padding:6px 10px"><input type="radio" checked="{{ o.on }}" onChange="{{ o.pick }}">{{ o.label }}</label>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;flex:0 0 auto;align-items:center;gap:9px">
+<span style="font:700 10px var(--font-body);letter-spacing:.1em;color:var(--color-neutral-700)">DELTA 기준</span>
+<div class="seg">
+<sc-for list="{{ deltaRefCtl }}" as="o" hint-placeholder-count="3">
+<label class="seg-opt" style="font-family:var(--font-body);font-weight:600;font-size:12px;white-space:nowrap;padding:6px 10px"><input type="radio" checked="{{ o.on }}" onChange="{{ o.pick }}">{{ o.label }}</label>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+
+<div style="width:1152px;height:648px"><div style="position:relative;width:1920px;height:1080px;background:#191c1f;overflow:hidden;border:1px solid rgba(32,30,29,.25);font-family:'JetBrains Mono','Pretendard',ui-monospace,monospace;transform:scale(.6);transform-origin:0 0">
+
+<video src="uploads/iRacing_onboard_background_720p.mp4" autoplay="autoplay" muted="muted" loop="loop" playsinline="playsinline" style="position:absolute;inset:0;width:1920px;height:1080px;object-fit:cover"></video>
+
+<!-- ══ 입력 (880×280, 하단 중앙) ══ -->
+<sc-if value="{{ winInput }}" hint-placeholder-val="{{ true }}">
+<canvas ref="{{ inputRef }}" style="position:absolute;left:{{ inLeft }}px;top:{{ inTop }}px;width:{{ inW }}px;height:{{ inH }}px;opacity:.8"></canvas>
+</sc-if>
+
+<!-- ══ 스포터 (1920×480, 평소 투명) ══ -->
+<sc-if value="{{ winSpotter }}" hint-placeholder-val="{{ true }}">
+<canvas ref="{{ spotterRef }}" width="1920" height="480" style="position:absolute;left:0;top:300px;width:1920px;height:480px;opacity:.8"></canvas>
+</sc-if>
+
+<!-- ══ 접근 (420×62 · A2 확대) — 뒤에서 붙는 차가 있을 때만 존재한다 ══ -->
+<sc-if value="{{ winApproach }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ apprOn }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;left:750px;top:20px;width:420px;height:62px;opacity:.9;border-radius:8px;overflow:hidden;background:var(--surface);font-family:'JetBrains Mono','Pretendard',monospace;font-variant-numeric:tabular-nums">
+<sc-if value="{{ apprAlarm }}" hint-placeholder-val="{{ false }}">
+<span style="position:absolute;left:4px;right:0;top:0;bottom:0;pointer-events:none;z-index:1;box-shadow:inset 0 0 24px rgba(229,75,75,.55);background:rgba(229,75,75,.16);animation:a2-pulse .5s ease-in-out infinite"></span>
+<span style="position:absolute;left:4px;right:0;top:0;bottom:0;pointer-events:none;z-index:4;box-shadow:inset 0 0 0 2px #E54B4B;animation:a2-pulse .5s ease-in-out infinite"></span>
+</sc-if>
+<sc-if value="{{ apprHasEdge }}" hint-placeholder-val="{{ false }}">
+<span style="position:absolute;left:0;top:0;width:5px;height:62px;z-index:3;background:{{ apprEdgeColor }}"></span>
+</sc-if>
+<div style="position:absolute;left:5px;right:0;top:0;height:42px;z-index:3;display:flex;align-items:center;gap:11px;padding:0 14px">
+<span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:5px;font-size:13px;font-weight:700;letter-spacing:.08em;background:{{ apprClsBg }};border:1px solid {{ apprClsBd }};color:{{ apprClsFg }}">{{ apprCls }}</span>
+<span style="font-size:15px;color:var(--table-dim)">{{ apprNum }}</span>
+<span style="font-size:17px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ apprName }}</span>
+<sc-if value="{{ apprClear }}" hint-placeholder-val="{{ false }}">
+<span style="margin-left:auto;font-size:18px;font-weight:700;letter-spacing:.1em;color:var(--throttle)">CLEAR</span>
+</sc-if>
+<sc-if value="{{ apprLive }}" hint-placeholder-val="{{ true }}">
+<span style="margin-left:auto;display:flex;align-items:baseline;gap:4px">
+<span style="font-size:29px;font-weight:700;letter-spacing:-.02em;color:{{ apprGapColor }}">{{ apprGap }}</span>
+<span style="font-size:12px;font-weight:600;letter-spacing:.1em;color:var(--micro)">S</span></span>
+</sc-if>
+</div>
+<div style="position:absolute;left:5px;right:0;bottom:0;height:20px;z-index:3;background:#242C3C">
+<sc-if value="{{ apprClear }}" hint-placeholder-val="{{ false }}">
+<span style="position:absolute;inset:0;background:rgba(63,195,128,.22)"></span>
+<span style="position:absolute;right:4px;top:0;bottom:0;width:4px;border-radius:2px;background:var(--throttle)"></span>
+</sc-if>
+<sc-if value="{{ apprLive }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ apprMarks }}" as="m" hint-placeholder-count="1">
+<span style="position:absolute;top:{{ m.ins }}px;bottom:{{ m.ins }}px;left:{{ m.tailX }}px;width:{{ m.tailW }}px;background:{{ m.tail }}"></span>
+<span style="position:absolute;top:{{ m.ins }}px;bottom:{{ m.ins }}px;left:{{ m.x }}px;width:{{ m.w }}px;border-radius:2px;background:{{ m.col }}"></span>
+</sc-for>
+<span style="position:absolute;right:4px;top:0;bottom:0;width:4px;border-radius:2px;background:#7D828C"></span>
+</sc-if>
+</div>
+</div>
+</sc-if>
+</sc-if>
+
+<!-- ══ 델타 (620×58) — 기준 랩 대비 이득/손실. 반사로 보는 창이라 축은 막대 하나 ══ -->
+<sc-if value="{{ winDelta }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ dOn }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;left:650px;top:92px;width:620px;height:58px;opacity:.9;border-radius:8px;overflow:hidden;background:var(--surface);font-family:'JetBrains Mono','Pretendard',monospace;font-variant-numeric:tabular-nums">
+<div style="position:absolute;left:0;right:0;top:0;height:36px;display:flex;align-items:center;gap:9px;padding:0 12px">
+<span style="display:inline-flex;align-items:center;height:19px;padding:0 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.1em;background:#1C2637;border:1px solid #3A4557;color:var(--micro)">{{ dRefTag }}</span>
+<span style="font-size:14px;color:var(--table-dim)">{{ dRefTime }}</span>
+<span style="margin-left:auto;display:flex;align-items:baseline;gap:6px">
+<span style="font-size:12px;font-weight:700;line-height:1;color:{{ dTrendCol }}">{{ dTrend }}</span>
+<span style="font-size:28px;font-weight:700;letter-spacing:-.02em;color:{{ dCol }}">{{ dTxt }}</span>
+</span>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:22px;background:#242C3C">
+<span style="position:absolute;top:3px;bottom:3px;left:{{ dFillX }}px;width:{{ dFillW }}px;background:{{ dFillBg }}"></span>
+<sc-for list="{{ dGhosts }}" as="g" hint-placeholder-count="1">
+<span style="position:absolute;top:0;bottom:0;left:{{ g.x }}px;width:5px;box-sizing:border-box;border:1px solid {{ g.col }};border-radius:2px"></span>
+</sc-for>
+<span style="position:absolute;top:0;bottom:0;left:{{ dCapX }}px;width:3px;border-radius:1.5px;background:{{ dCol }}"></span>
+<span style="position:absolute;top:0;bottom:0;left:309px;width:2px;background:#7D828C"></span>
+</div>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ winRelative }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ relT2 }}" hint-placeholder-val="{{ true }}">
+<!-- ══ Relative — 티어 2 (420×220) ══ -->
+<div style="position:absolute;left:1495px;top:855px;width:420px;height:220px;opacity:.8;border-radius:6px;overflow:hidden;line-height:1.55;font-family:'JetBrains Mono','Pretendard',monospace">
+<div style="position:relative;height:24px;background:var(--bar);box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<sc-for list="{{ barItemsSm }}" as="it" hint-placeholder-count="4"><span style="position:absolute;top:0;height:24px;display:flex;align-items:center;font-size:10px;white-space:nowrap;left:{{ it.x }}px;color:{{ it.c }};font-weight:{{ it.w }}">{{ it.t }}</span></sc-for>
+<span style="position:absolute;right:9px;top:0;height:24px;display:flex;align-items:center;font-size:11px;font-weight:600;color:{{ remainColor }};font-variant-numeric:tabular-nums">{{ remainText }}</span>
+</div>
+<sc-for list="{{ relRowsSm }}" as="r" hint-placeholder-count="7">
+<div style="position:relative;height:28px;background:{{ r.bg }};box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<span style="position:absolute;left:0;top:0;height:28px;background:{{ r.cls }};width:{{ r.markW }}px"></span>
+<span style="position:absolute;left:9px;top:0;width:20px;height:28px;display:flex;align-items:center;justify-content:flex-end;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ r.posC }}">{{ r.pos }}</span>
+<span style="position:absolute;left:36px;top:0;height:28px;display:flex;align-items:center;font-size:12px;color:var(--micro);font-variant-numeric:tabular-nums">{{ r.num }}</span>
+<span style="position:absolute;left:74px;top:6px;width:17px;height:17px;background-image:url({{ r.logo }});background-size:contain;background-repeat:no-repeat;background-position:center"></span>
+<span style="position:absolute;left:96px;top:0;width:100px;height:28px;display:flex;align-items:center;font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em;font-weight:{{ r.nw }}">{{ r.name }}</span>
+<span style="position:absolute;left:200px;top:6px;width:86px;height:17px;box-sizing:border-box;border-radius:4px;overflow:hidden;display:flex;align-items:stretch;background:{{ r.srBg }};border:1px solid {{ r.srBd }}">
+<span style="flex:1;display:flex;align-items:center;gap:3px;padding:0 4px">
+<span style="font-size:10px;font-weight:700;letter-spacing:.04em;color:{{ r.srFg }}">{{ r.srGrade }}</span>
+<span style="font-size:10px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums">{{ r.srScore }}</span></span>
+<span style="width:32px;background:#1C2026;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ r.irC }}">{{ r.ir }}</span></span>
+<span style="position:absolute;left:292px;top:0;width:58px;height:28px;display:flex;align-items:center;justify-content:flex-end;font-size:21px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:{{ r.gapC }}">{{ r.gap }}</span>
+<span style="position:absolute;right:9px;top:0;height:28px;display:flex;align-items:center;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ r.closingC }}">{{ r.closing }}</span>
+<span style="position:absolute;right:9px;top:0;height:28px;display:flex;align-items:center;font-size:10px;font-weight:700;letter-spacing:.04em;color:{{ r.lapC }}">{{ r.lapTok }}</span>
+</div>
+</sc-for>
+</div>
+
+</sc-if>
+<sc-if value="{{ relT1 }}" hint-placeholder-val="{{ false }}">
+<!-- ══ Relative — 티어 1 (560×320) ══ -->
+<div style="position:absolute;left:1355px;top:755px;width:560px;height:320px;opacity:.8;border-radius:6px;overflow:hidden;line-height:1.55;font-family:'JetBrains Mono','Pretendard',monospace">
+<div style="position:relative;height:24px;background:var(--bar);box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<sc-for list="{{ barItems }}" as="it" hint-placeholder-count="6"><span style="position:absolute;top:0;height:24px;display:flex;align-items:center;font-size:11px;white-space:nowrap;left:{{ it.x }}px;color:{{ it.c }};font-weight:{{ it.w }}">{{ it.t }}</span></sc-for>
+<span style="position:absolute;right:12px;top:0;height:24px;display:flex;align-items:center;font-size:12px;font-weight:600;color:{{ remainColor }};font-variant-numeric:tabular-nums">{{ remainText }}</span>
+</div>
+<div style="position:relative;height:26px;background:#0F131D;color:var(--micro);font-size:9px;font-weight:600;letter-spacing:.1em;box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<span style="position:absolute;left:12px;top:9px;width:20px;text-align:right">P</span>
+<span style="position:absolute;left:38px;top:9px">CAR</span>
+<span style="position:absolute;left:134px;top:9px">DRIVER</span>
+<span style="position:absolute;left:260px;top:9px">SR · IR</span>
+<span style="position:absolute;left:396px;top:9px;width:60px;text-align:right">GAP</span>
+<span style="position:absolute;left:464px;top:9px;width:84px;text-align:right">CLOSING</span>
+</div>
+<sc-for list="{{ relRows }}" as="r" hint-placeholder-count="9">
+<div style="position:relative;height:30px;background:{{ r.bg }};box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<span style="position:absolute;left:0;top:0;height:30px;background:{{ r.cls }};width:{{ r.markW }}px"></span>
+<span style="position:absolute;left:12px;top:0;width:20px;height:30px;display:flex;align-items:center;justify-content:flex-end;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ r.posC }}">{{ r.pos }}</span>
+<span style="position:absolute;left:38px;top:0;height:30px;display:flex;align-items:center;font-size:13px;color:var(--micro);font-variant-numeric:tabular-nums">{{ r.num }}</span>
+<span style="position:absolute;left:72px;top:6px;width:17px;height:17px;background-image:url({{ r.logo }});background-size:contain;background-repeat:no-repeat;background-position:center"></span>
+<span style="position:absolute;left:134px;top:0;width:120px;height:30px;display:flex;align-items:center;font-size:14px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em;font-weight:{{ r.nw }}">{{ r.name }}</span>
+<span style="position:absolute;left:260px;top:6px;width:80px;height:19px;box-sizing:border-box;border-radius:5px;overflow:hidden;display:flex;align-items:stretch;background:{{ r.srBg }};border:1px solid {{ r.srBd }}">
+<span style="flex:1;display:flex;align-items:center;gap:4px;padding:0 6px">
+<span style="font-size:11px;font-weight:700;letter-spacing:.04em;color:{{ r.srFg }}">{{ r.srGrade }}</span>
+<span style="font-size:11px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums">{{ r.srScore }}</span></span>
+<span style="width:36px;background:#1C2026;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ r.irC }}">{{ r.ir }}</span></span>
+<span style="position:absolute;left:346px;top:0;width:44px;height:30px;display:flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.04em;color:{{ r.lapC }}">{{ r.lapTok }}</span>
+<span style="position:absolute;left:396px;top:0;width:60px;height:30px;display:flex;align-items:center;justify-content:flex-end;font-size:22px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:{{ r.gapC }}">{{ r.gap }}</span>
+<span style="position:absolute;left:464px;top:0;width:84px;height:30px;display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ r.closingC }}">{{ r.closing }}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ relT3 }}" hint-placeholder-val="{{ false }}">
+<!-- ══ Relative — 티어 3 (320×160) ══ -->
+<div style="position:absolute;left:1595px;top:915px;width:320px;height:160px;opacity:.8;border-radius:6px;overflow:hidden;line-height:1.55;font-family:'JetBrains Mono','Pretendard',monospace">
+<div style="position:relative;height:18px;background:var(--bar);box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<sc-for list="{{ barItemsXs }}" as="it" hint-placeholder-count="2"><span style="position:absolute;top:0;height:18px;display:flex;align-items:center;font-size:9px;white-space:nowrap;left:{{ it.x }}px;color:{{ it.c }};font-weight:{{ it.w }}">{{ it.t }}</span></sc-for>
+<span style="position:absolute;right:8px;top:0;height:18px;display:flex;align-items:center;font-size:10px;font-weight:600;color:{{ remainColor }};font-variant-numeric:tabular-nums">{{ remainText }}</span>
+</div>
+<sc-for list="{{ relRowsXs }}" as="r" hint-placeholder-count="5">
+<div style="position:relative;height:28px;background:{{ r.bg }};box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<span style="position:absolute;left:0;top:0;height:28px;background:{{ r.cls }};width:{{ r.markW }}px"></span>
+<span style="position:absolute;left:9px;top:0;width:20px;height:28px;display:flex;align-items:center;justify-content:flex-end;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ r.posC }}">{{ r.pos }}</span>
+<span style="position:absolute;left:34px;top:0;height:28px;display:flex;align-items:center;font-size:13px;color:var(--micro);font-variant-numeric:tabular-nums">{{ r.num }}</span>
+<span style="position:absolute;left:70px;top:6px;width:18px;height:17px;box-sizing:border-box;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:{{ r.srBg }};border:1px solid {{ r.srBd }};color:{{ r.srFg }}">{{ r.srGrade }}</span>
+<span style="position:absolute;left:92px;top:0;width:32px;height:28px;display:flex;align-items:center;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ r.irC }}">{{ r.ir }}</span>
+<span style="position:absolute;left:130px;top:0;width:46px;height:28px;display:flex;align-items:center;font-size:13px;letter-spacing:.02em;color:var(--text);font-weight:{{ r.nw }}">{{ r.abbr }}</span>
+<span style="position:absolute;left:190px;top:0;width:66px;height:28px;display:flex;align-items:center;justify-content:flex-end;font-size:20px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:{{ r.gapC }}">{{ r.gap }}</span>
+<span style="position:absolute;right:8px;top:0;height:28px;display:flex;align-items:center;font-size:12px;font-weight:700;color:{{ r.closingC }}">{{ r.closeArrow }}</span>
+<span style="position:absolute;right:8px;top:0;height:28px;display:flex;align-items:center;font-size:9px;font-weight:700;letter-spacing:.04em;color:{{ r.lapC }}">{{ r.lapTok }}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ winStandings }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ stdT2 }}" hint-placeholder-val="{{ true }}">
+<!-- ══ Standings — 티어 2 (520×340) ══ -->
+<div style="position:absolute;left:1395px;top:5px;width:520px;height:340px;opacity:.8;border-radius:6px;overflow:hidden;line-height:1.55;font-family:'JetBrains Mono','Pretendard',monospace">
+<div style="position:relative;height:28px;background:var(--bar);box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<sc-for list="{{ barItems }}" as="it" hint-placeholder-count="6"><span style="position:absolute;top:0;height:28px;display:flex;align-items:center;font-size:11px;white-space:nowrap;left:{{ it.x }}px;color:{{ it.c }};font-weight:{{ it.w }}">{{ it.t }}</span></sc-for>
+<span style="position:absolute;right:14px;top:0;height:28px;display:flex;align-items:center;font-size:12px;font-weight:600;color:{{ remainColor }};font-variant-numeric:tabular-nums">{{ remainText }}</span>
+</div>
+<div style="position:relative;height:24px;background:#0F131D;color:var(--micro);font-size:9px;font-weight:600;letter-spacing:.1em;box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<span style="position:absolute;left:12px;top:8px;width:22px;text-align:right">P</span>
+<span style="position:absolute;left:40px;top:8px">CAR</span>
+<span style="position:absolute;left:76px;top:8px">DRIVER</span>
+<span style="position:absolute;left:252px;top:8px">SR · IR</span>
+<span style="position:absolute;left:344px;top:8px;width:76px;text-align:right">BEST</span>
+<span style="position:absolute;left:428px;top:8px;width:78px;text-align:right">GAP</span>
+</div>
+<sc-for list="{{ stdRowsSm }}" as="r" hint-placeholder-count="12">
+<div style="position:relative;height:{{ r.h }}px;background:{{ r.bg }};margin-top:{{ r.gapTop }}px;border-radius:{{ r.rad }};box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<sc-if value="{{ r.isHead }}" hint-placeholder-val="{{ false }}">
+<span style="position:absolute;left:12px;top:6px;width:3px;height:12px;border-radius:2px;background:{{ r.cls }}"></span>
+<span style="position:absolute;left:22px;top:0;height:{{ r.h }}px;display:flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.11em;color:{{ r.headC }}">{{ r.headLabel }}</span>
+<span style="position:absolute;left:{{ r.headCountX }}px;top:0;height:{{ r.h }}px;display:flex;align-items:center;font-size:10px;letter-spacing:.06em;color:var(--micro);font-variant-numeric:tabular-nums">{{ r.headCount }}</span>
+<span style="position:absolute;right:12px;top:0;height:{{ r.h }}px;display:flex;align-items:center;font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--micro)">{{ r.hidden }}</span>
+</sc-if>
+<sc-if value="{{ r.isCar }}" hint-placeholder-val="{{ true }}">
+<span style="position:absolute;left:0;top:0;height:{{ r.h }}px;background:{{ r.cls }};width:{{ r.markW }}px"></span>
+<span style="position:absolute;left:12px;top:0;width:22px;height:{{ r.h }}px;display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-variant-numeric:tabular-nums;color:{{ r.posC }};font-weight:{{ r.nw }}">{{ r.pos }}</span>
+<span style="position:absolute;left:40px;top:0;height:{{ r.h }}px;display:flex;align-items:center;font-size:12px;color:var(--micro);font-variant-numeric:tabular-nums">{{ r.num }}</span>
+<span style="position:absolute;left:76px;top:0;width:168px;height:{{ r.h }}px;display:flex;align-items:center;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em;color:{{ r.main }};font-weight:{{ r.nw }}">{{ r.name }}</span>
+<span style="position:absolute;left:252px;top:3px;width:84px;height:19px;box-sizing:border-box;border-radius:5px;overflow:hidden;display:flex;align-items:stretch;background:{{ r.srBg }};border:1px solid {{ r.srBd }}">
+<span style="flex:1;display:flex;align-items:center;gap:5px;padding:0 6px">
+<span style="font-size:11px;font-weight:700;letter-spacing:.04em;color:{{ r.srFg }}">{{ r.srGrade }}</span>
+<span style="font-size:11px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums">{{ r.srScore }}</span></span>
+<span style="width:38px;background:#1C2026;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ r.irC }}">{{ r.ir }}</span></span>
+<span style="position:absolute;left:344px;top:0;width:76px;height:{{ r.h }}px;display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-variant-numeric:tabular-nums;color:{{ r.bestC }};font-weight:{{ r.bestW }}">{{ r.best }}</span>
+<span style="position:absolute;left:428px;top:0;width:78px;height:{{ r.h }}px;display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-variant-numeric:tabular-nums;color:{{ r.ivPitC }}">{{ r.ivPit }}</span>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ stdT1 }}" hint-placeholder-val="{{ false }}">
+<!-- ══ Standings — 티어 1 (700×460) ══ -->
+<div style="position:absolute;left:1195px;top:5px;width:700px;height:460px;opacity:.8;border-radius:6px;overflow:hidden;line-height:1.55;font-family:'JetBrains Mono','Pretendard',monospace">
+<div style="position:relative;height:24px;background:var(--bar);box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<sc-for list="{{ barItems }}" as="it" hint-placeholder-count="6"><span style="position:absolute;top:0;height:24px;display:flex;align-items:center;font-size:11px;white-space:nowrap;left:{{ it.x }}px;color:{{ it.c }};font-weight:{{ it.w }}">{{ it.t }}</span></sc-for>
+<span style="position:absolute;right:14px;top:0;height:24px;display:flex;align-items:center;font-size:12px;font-weight:600;color:{{ remainColor }};font-variant-numeric:tabular-nums">{{ remainText }}</span>
+</div>
+<div style="position:relative;height:26px;background:#0F131D;color:var(--micro);font-size:9px;font-weight:600;letter-spacing:.1em;box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<span style="position:absolute;left:12px;top:9px;width:22px;text-align:right">P</span>
+<span style="position:absolute;left:40px;top:9px">CAR</span>
+<span style="position:absolute;left:98px;top:9px">DRIVER</span>
+<span style="position:absolute;left:288px;top:9px">SR · IR</span>
+<span style="position:absolute;left:380px;top:9px;width:52px;text-align:right">±IR</span>
+<span style="position:absolute;left:440px;top:9px;width:76px;text-align:right">LAST</span>
+<span style="position:absolute;left:526px;top:9px;width:76px;text-align:right">BEST</span>
+<span style="position:absolute;left:610px;top:9px;width:76px;text-align:right">GAP</span>
+</div>
+<sc-for list="{{ stdRows }}" as="r" hint-placeholder-count="14">
+<div style="position:relative;height:{{ r.h }}px;background:{{ r.bg }};margin-top:{{ r.gapTop }}px;border-radius:{{ r.rad }};box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<sc-if value="{{ r.isHead }}" hint-placeholder-val="{{ false }}">
+<span style="position:absolute;left:12px;top:6px;width:3px;height:12px;border-radius:2px;background:{{ r.cls }}"></span>
+<span style="position:absolute;left:22px;top:0;height:{{ r.h }}px;display:flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.11em;color:{{ r.headC }}">{{ r.headLabel }}</span>
+<span style="position:absolute;left:{{ r.headCountX }}px;top:0;height:{{ r.h }}px;display:flex;align-items:center;font-size:10px;letter-spacing:.06em;color:var(--micro);font-variant-numeric:tabular-nums">{{ r.headCount }}</span>
+<span style="position:absolute;right:14px;top:0;height:{{ r.h }}px;display:flex;align-items:center;font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--micro)">{{ r.hidden }}</span>
+</sc-if>
+<sc-if value="{{ r.isCar }}" hint-placeholder-val="{{ true }}">
+<span style="position:absolute;left:0;top:0;height:{{ r.h }}px;background:{{ r.cls }};width:{{ r.markW }}px"></span>
+<span style="position:absolute;left:12px;top:0;width:22px;height:{{ r.h }}px;display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-variant-numeric:tabular-nums;color:{{ r.posC }};font-weight:{{ r.nw }}">{{ r.pos }}</span>
+<span style="position:absolute;left:40px;top:0;height:{{ r.h }}px;display:flex;align-items:center;font-size:12px;color:var(--micro);font-variant-numeric:tabular-nums">{{ r.num }}</span>
+<span style="position:absolute;left:74px;top:0;width:17px;height:{{ r.h }}px;background-image:url({{ r.logo }});background-size:17px auto;background-repeat:no-repeat;background-position:center;opacity:{{ r.logoOp }}"></span>
+<span style="position:absolute;left:98px;top:0;width:180px;height:{{ r.h }}px;display:flex;align-items:center;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em;color:{{ r.main }};font-weight:{{ r.nw }}">{{ r.name }}</span>
+<span style="position:absolute;left:288px;top:3px;width:84px;height:19px;box-sizing:border-box;border-radius:5px;overflow:hidden;display:flex;align-items:stretch;background:{{ r.srBg }};border:1px solid {{ r.srBd }}">
+<span style="flex:1;display:flex;align-items:center;gap:5px;padding:0 6px">
+<span style="font-size:11px;font-weight:700;letter-spacing:.04em;color:{{ r.srFg }}">{{ r.srGrade }}</span>
+<span style="font-size:11px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums">{{ r.srScore }}</span></span>
+<span style="width:38px;background:#1C2026;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ r.irC }}">{{ r.ir }}</span></span>
+<span style="position:absolute;left:380px;top:0;width:52px;height:{{ r.h }}px;display:flex;align-items:center;justify-content:flex-end;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ r.dC }}">{{ r.delta }}</span>
+<span style="position:absolute;left:440px;top:0;width:76px;height:{{ r.h }}px;display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-variant-numeric:tabular-nums;color:var(--micro)">{{ r.last }}</span>
+<span style="position:absolute;left:526px;top:0;width:76px;height:{{ r.h }}px;display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-variant-numeric:tabular-nums;color:{{ r.bestC }};font-weight:{{ r.bestW }}">{{ r.best }}</span>
+<span style="position:absolute;left:610px;top:0;width:76px;height:{{ r.h }}px;display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-variant-numeric:tabular-nums;color:{{ r.ivPitC }}">{{ r.ivPit }}</span>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ stdT3 }}" hint-placeholder-val="{{ false }}">
+<!-- ══ Standings — 티어 3 (380×240) ══ -->
+<div style="position:absolute;left:1535px;top:5px;width:380px;height:240px;opacity:.8;border-radius:6px;overflow:hidden;line-height:1.55;font-family:'JetBrains Mono','Pretendard',monospace">
+<div style="position:relative;height:18px;background:var(--bar);box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<sc-for list="{{ barItemsXs }}" as="it" hint-placeholder-count="2"><span style="position:absolute;top:0;height:18px;display:flex;align-items:center;font-size:9px;white-space:nowrap;left:{{ it.x }}px;color:{{ it.c }};font-weight:{{ it.w }}">{{ it.t }}</span></sc-for>
+<span style="position:absolute;right:8px;top:0;height:18px;display:flex;align-items:center;font-size:10px;font-weight:600;color:{{ remainColor }};font-variant-numeric:tabular-nums">{{ remainText }}</span>
+</div>
+<sc-for list="{{ stdRowsXs }}" as="r" hint-placeholder-count="10">
+<div style="position:relative;height:{{ r.h }}px;background:{{ r.bg }};margin-top:{{ r.gapTop }}px;border-radius:{{ r.rad }};box-shadow:inset 0 -1px 0 rgba(230,234,240,0.07)">
+<sc-if value="{{ r.isHead }}" hint-placeholder-val="{{ false }}">
+<span style="position:absolute;left:10px;top:6px;width:3px;height:12px;border-radius:2px;background:{{ r.cls }}"></span>
+<span style="position:absolute;left:20px;top:0;height:{{ r.h }}px;display:flex;align-items:center;font-size:10px;font-weight:700;letter-spacing:.11em;color:{{ r.headC }}">{{ r.headLabel }}</span>
+<span style="position:absolute;right:10px;top:0;height:{{ r.h }}px;display:flex;align-items:center;font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--micro)">{{ r.hidden }}</span>
+</sc-if>
+<sc-if value="{{ r.isCar }}" hint-placeholder-val="{{ true }}">
+<span style="position:absolute;left:0;top:0;height:{{ r.h }}px;background:{{ r.cls }};width:{{ r.markW }}px"></span>
+<span style="position:absolute;left:10px;top:0;width:20px;height:{{ r.h }}px;display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-variant-numeric:tabular-nums;color:{{ r.posC }};font-weight:{{ r.nw }}">{{ r.pos }}</span>
+<span style="position:absolute;left:36px;top:0;height:{{ r.h }}px;display:flex;align-items:center;font-size:12px;color:var(--micro);font-variant-numeric:tabular-nums">{{ r.num }}</span>
+<span style="position:absolute;left:68px;top:3px;width:18px;height:17px;box-sizing:border-box;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:{{ r.srBg }};border:1px solid {{ r.srBd }};color:{{ r.srFg }}">{{ r.srGrade }}</span>
+<span style="position:absolute;left:92px;top:0;width:30px;height:{{ r.h }}px;display:flex;align-items:center;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ r.irC }}">{{ r.ir }}</span>
+<span style="position:absolute;left:128px;top:0;width:96px;height:{{ r.h }}px;display:flex;align-items:center;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em;color:{{ r.main }};font-weight:{{ r.nw }}">{{ r.abbr }}</span>
+<span style="position:absolute;left:232px;top:0;width:72px;height:{{ r.h }}px;display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-variant-numeric:tabular-nums;color:{{ r.bestC }};font-weight:{{ r.bestW }}">{{ r.best }}</span>
+<span style="position:absolute;left:312px;top:0;width:52px;height:{{ r.h }}px;display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-variant-numeric:tabular-nums;color:{{ r.ivPitC }}">{{ r.ivPit }}</span>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+<sc-if value="{{ winWeather }}" hint-placeholder-val="{{ true }}">
+<!-- ══ 날씨 · 트랙 (268×272 · W1) — 바람은 별개 창 ══ -->
+<div style="position:absolute;left:5px;top:5px;width:268px;height:272px;opacity:.8;border-radius:6px;overflow:hidden;line-height:1.55;font-family:'JetBrains Mono','Pretendard',monospace;background:var(--surface)">
+<div style="position:absolute;left:0;top:0;right:0;height:24px;background:var(--bar);display:flex;align-items:center;padding:0 12px;box-shadow:inset 0 -1px 0 var(--hairline)">
+<span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--throttle)"></span><span style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--text)">TRACK</span></span>
+<span style="margin-left:auto;display:flex;align-items:baseline;gap:5px"><span style="font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--micro)">TIME</span><span style="font-size:11px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums">14:23</span></span></div>
+<div style="position:absolute;left:0;top:24px;right:0;bottom:0">
+<div style="position:absolute;left:14px;top:10px;font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--micro)">TRACK TEMP</div>
+<div style="position:absolute;left:14px;top:20px;display:flex;align-items:baseline;gap:6px">
+<span style="font-size:46px;line-height:46px;font-weight:600;color:var(--text);letter-spacing:-.03em;font-variant-numeric:tabular-nums">{{ wxL.track }}</span>
+<span style="font-size:12px;color:var(--micro)">°C</span></div>
+<div style="position:absolute;left:14px;right:14px;top:72px;display:flex;align-items:center;gap:7px">
+<span style="font-size:13px;font-weight:700;color:#e6c37d;font-variant-numeric:tabular-nums">{{ wxL.trackDelta }}</span>
+<span style="font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--micro)">SINCE START</span>
+<span style="margin-left:auto;font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--micro)">LAST 10 MIN</span></div>
+<div style="position:absolute;left:14px;top:90px"><svg width="238" height="26" viewBox="0 0 238 26" style="display:block;overflow:visible"><polygon points="{{ wxL.trackArea }}" fill="var(--pit)" opacity="0.13"></polygon><polyline points="{{ wxL.trackLine }}" fill="none" stroke="var(--pit)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></polyline><circle cx="{{ wxL.trackCx }}" cy="{{ wxL.trackCy }}" r="2.4" fill="var(--pit)"></circle></svg></div>
+<div style="position:absolute;left:14px;right:14px;top:124px;height:1px;background:var(--hairline)"></div>
+<div style="position:absolute;left:14px;top:132px;display:flex;align-items:baseline;gap:6px">
+<span style="font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--micro)">AIR</span>
+<span style="font-size:19px;line-height:19px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums">{{ wxL.air }}</span>
+<span style="font-size:10px;color:var(--micro)">°C</span>
+<span style="font-size:11px;font-weight:700;color:#6ece9f;font-variant-numeric:tabular-nums;margin-left:2px">{{ wxL.airDelta }}</span></div>
+<div style="position:absolute;left:170px;top:130px"><svg width="82" height="20" viewBox="0 0 82 20" style="display:block;overflow:visible"><polyline points="{{ wxL.airLine }}" fill="none" stroke="var(--clutch)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></polyline><circle cx="{{ wxL.airCx }}" cy="{{ wxL.airCy }}" r="2" fill="var(--clutch)"></circle></svg></div>
+<div style="position:absolute;left:14px;right:14px;top:159px;height:1px;background:var(--hairline)"></div>
+<div style="position:absolute;left:14px;top:167px;width:240px;display:flex;align-items:baseline;gap:6px">
+<span style="font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--micro)">SKY</span>
+<span style="margin-left:auto;font-size:13px;font-weight:500;color:var(--table-dim)">Few clouds</span></div>
+<div style="position:absolute;left:14px;top:191px;width:110px;display:flex;align-items:baseline;gap:6px">
+<span style="font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--micro)">HUMID</span>
+<span style="margin-left:auto;font-size:14px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums">{{ wxL.humid }}<span style="font-size:10px;font-weight:400;color:var(--micro);margin-left:2px">%</span></span></div>
+<div style="position:absolute;left:144px;top:191px;width:110px;display:flex;align-items:baseline;gap:6px">
+<span style="font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--micro)">PRESS</span>
+<span style="margin-left:auto;font-size:14px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums">{{ wxL.press }}<span style="font-size:10px;font-weight:400;color:var(--micro);margin-left:2px">inHg</span></span></div>
+<div style="position:absolute;left:14px;top:215px;width:110px;display:flex;align-items:baseline;gap:6px">
+<span style="font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--micro)">DENSITY</span>
+<span style="margin-left:auto;font-size:14px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums">{{ wxL.dens }}</span></div>
+<div style="position:absolute;left:144px;top:215px;width:110px;display:flex;align-items:baseline;gap:6px">
+<span style="font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--micro)">FOG</span>
+<span style="margin-left:auto;font-size:14px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums">{{ wxL.fog }}<span style="font-size:10px;font-weight:400;color:var(--micro);margin-left:2px">%</span></span></div>
+</div></div>
+</sc-if>
+<sc-if value="{{ winWind }}" hint-placeholder-val="{{ true }}">
+<!-- ══ 윈드 로즈 (152×174) — 면 없음, 게임이 그대로 비친다 ══ -->
+<div style="position:absolute;left:289px;top:5px;width:152px;height:174px;opacity:.9;font-family:'JetBrains Mono','Pretendard',monospace">
+<svg width="152" height="152" viewBox="0 0 152 152" style="position:absolute;left:0;top:0;display:block">
+<circle cx="76" cy="76" r="54" fill="none" stroke="var(--line-ring)" stroke-width="2.5"></circle>
+<line x1="76.0" y1="10.0" x2="76.0" y2="20.0" stroke="var(--table-dim)" stroke-width="2"></line><line x1="140.0" y1="76.0" x2="132.0" y2="76.0" stroke="var(--line-strong)" stroke-width="1.4"></line><line x1="76.0" y1="140.0" x2="76.0" y2="132.0" stroke="var(--line-strong)" stroke-width="1.4"></line><line x1="12.0" y1="76.0" x2="20.0" y2="76.0" stroke="var(--line-strong)" stroke-width="1.4"></line>
+<g style="transform:{{ wxL.windSpin }};transform-origin:76px 76px;transform-box:view-box">
+<path d="M 70.6 99.4 L 65.2 122.8 A 48 48 0 0 1 45.8 113.3 L 60.9 94.7 A 24 24 0 0 0 70.6 99.4 Z" fill="var(--clutch)" opacity="0.30"></path>
+<path d="M 63.9 128.6 A 54 54 0 0 1 42.0 118.0" fill="none" stroke="var(--wind-cap)" stroke-width="{{ wxL.windArcW }}" stroke-linecap="butt"></path>
+</g>
+</svg>
+<div style="position:absolute;left:0;top:60px;width:152px;text-align:center;font-size:26px;line-height:32px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:-.02em">{{ wxL.wind }}</div>
+<div style="position:absolute;left:0;right:0;top:152px;text-align:center;font-size:13px;font-weight:600;color:var(--text);letter-spacing:.04em">{{ wxL.windDir }}</div>
+</div>
+</sc-if>
+
+<!-- 리모컨은 재현 화면에서 제거됨 -->
+<div style="display:none;position:absolute;left:1300px;top:520px;width:560px;height:486px;box-sizing:border-box;border:1px solid #D9DDE3;border-radius:4px;background:#F4F5F7;font-family:'Pretendard',system-ui,sans-serif;box-shadow:0 18px 44px rgba(0,0,0,.45)">
+<div style="height:30px;background:#ECEFF3;border-radius:3px 3px 0 0;display:flex;align-items:center;padding-left:10px">
+<span style="width:16px;height:16px;border-radius:2px;background:#4AA3FF"></span>
+<span style="margin-left:7px;font-size:12px;font-weight:600;color:#3A4150">오버레이 설정</span>
+<span style="margin-left:auto;display:flex"><span style="width:36px;height:24px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#5A6272">—</span><span style="width:36px;height:24px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#5A6272">✕</span></span>
+</div>
+<div style="margin:6px 10px 0;height:34px;box-sizing:border-box;padding:0 10px;background:#fff;border:1px solid #E3E6EB;border-radius:4px;display:flex;align-items:center;gap:0">
+<span style="font-size:13px;color:{{ connColor }}">{{ connDot }}</span>
+<span style="margin-left:5px;width:42px;font-size:11px;color:#5A6272">{{ connText }}</span>
+<span style="width:1px;height:18px;background:#E3E6EB;margin:0 4px"></span>
+<sc-for list="{{ winToggles }}" as="t" hint-placeholder-count="5">
+<label style="display:flex;align-items:center;gap:5px;margin:0 4px 0 4px;font-size:13px;color:#1F2430;cursor:pointer"><input type="checkbox" checked="{{ t.on }}" onChange="{{ t.toggle }}" style="accent-color:#4AA3FF;margin:0">{{ t.label }}</label>
+</sc-for>
+<label style="display:flex;align-items:center;gap:5px;margin-left:auto;font-size:13px;color:#1F2430;cursor:pointer"><input type="checkbox" checked="{{ arrange }}" onChange="{{ toggleArrange }}" style="accent-color:#4AA3FF;margin:0">배치 모드</label>
+</div>
+<div style="margin:6px 10px 0;display:flex;gap:4px">
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="6">
+<button onClick="{{ t.pick }}" style="padding:3px 13px;font-size:13px;font-family:inherit;border-radius:4px;cursor:pointer;background:{{ t.bg }};border:1px solid {{ t.bd }};color:{{ t.fg }}">{{ t.label }}</button>
+</sc-for>
+</div>
+<div style="margin:6px 10px 10px;padding:14px;background:#fff;border:1px solid #E3E6EB;border-radius:4px;height:352px;box-sizing:border-box;overflow:hidden">{{ tabBody }}</div>
+</div>
+
+<sc-if value="{{ arrange }}" hint-placeholder-val="{{ false }}">
+<sc-for list="{{ arrBoxes }}" as="b" hint-placeholder-count="6">
+<span style="position:absolute;left:{{ b.x }}px;top:{{ b.y }}px;width:{{ b.w }}px;height:{{ b.h }}px;border:2px solid #4AA3FF;border-radius:4px;pointer-events:none;box-sizing:border-box"></span>
+</sc-for>
+</sc-if>
+
+</div></div>
+
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:2008,&quot;height&quot;:1500},&quot;wheelMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ring&quot;,&quot;photo&quot;],&quot;default&quot;:&quot;ring&quot;,&quot;tsType&quot;:&quot;'ring'|'photo'&quot;,&quot;section&quot;:&quot;입력 창&quot;},&quot;deltaRef&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;pb&quot;,&quot;sb&quot;,&quot;last&quot;],&quot;default&quot;:&quot;pb&quot;,&quot;tsType&quot;:&quot;'pb'|'sb'|'last'&quot;,&quot;section&quot;:&quot;델타 창&quot;}}">
+const P = {
+  bg:'#0A0F1A', panel:'#111827', grid:'#1E293B', zero:'#334155',
+  barsTrack:'#202C42', header:'#162032', row:'#0E1522', rowAlt:'#131C2C',
+  text:'#E6EAF0', dim:'#8A929E',
+  thr:'#3FC380', brk:'#E54B4B', clu:'#5BA8F0', str:'#B07AF0', abs:'#FFD11A',
+  playerRow:'#2A3A22', ahead:'#E69A5A', behind:'#5BA8F0', pit:'#E6B450',
+  watermark:'rgba(230,234,240,0.431)', watermarkUnit:'rgba(138,146,158,0.333)',
+  ok:'#3FC380', race:'#E6B450', urgent:'#E54B4B', qualify:'#5BA8F0', practice:'#4FCB74',
+  sessionBest:'#B07AF0', gain:'#3FC380', loss:'#E54B4B',
+  ledOff:'#15181D', ledGreen:'#3FC380', ledAmber:'#E6B450', ledRed:'#E54B4B',
+};
+const FONT = "'JetBrains Mono','Pretendard',monospace";
+const IN_TIERS = {1:[880,280], 2:[700,224], 3:[560,180]};
+// 티어 축약 이름 — 380/320 티어에서만 쓴다
+function abbrevName(n){ const p = n.trim().split(/\s+/); return p.length<2 ? n : p[0][0]+'. '+p[p.length-1]; }
+function abbrev3(n){ const p = n.trim().split(/\s+/); return (p[p.length-1]||n).slice(0,3).toUpperCase(); }
+// 배경 온보드 영상에서 프레임 분석으로 실측한 횡방향(코너) 곡선 — 0.5s 간격 · 74s 루프
+const VID_LAT = ("0.113,0.138,0.134,0.127,0.032,0.062,0.115,-0.016,0.001,-0.095,-0.085,-0.126,0.114,0.076,-0.003,0.016,0.05,0.048,0.077,0.124,0.124,0.121,0.061,0.02,-0.047,-0.018,-0.044,-0.001,0.045,0.07,0.135,0.057,0.064,0.099,-0.166,-0.144,-0.07,-0.068,-0.038,-0.056,-0.051,-0.017,0.085,0.138,0.124,0.194,0.251,0.145,0.033,0.012,-0.035,-0.054,-0.058,-0.112,-0.132,-0.081,0.019,0.194,0.124,0.03,0.06,0.037,-0.02,-0.042,-0.045,-0.058,0.017,0.136,0.127,-0.024,0.002,-0.033,-0.049,-0.035,-0.005,0.081,0.029,-0.044,-0.222,-0.066,-0.03,-0.194,-0.201,-0.116,0.04,0.255,0.278,0.077,-0.122,-0.045,0.017,-0.063,-0.063,-0.095,-0.141,-0.138,-0.026,-0.042,-0.004,0.044,0.109,0.165,0.176,0.177,0.209,0.196,0.169,0.051,0.043,0.035,0.004,-0.064,-0.184,-0.01,0.01,0.052,0.1,0.138,0.179,0.206,0.204,0.199,0.199,0.201,0.188,0.243,0.213,0.247,0.252,0.248,0.205,0.111,0.039,0.039,0.035,-0.035,-0.036,0.012,0.116,0.188,0.21,0.169,0.078,0.065,0.087,0.068,0.134,0.15").split(',').map(Number);
+const LICS = [['A',0x0153DB],['B',0x00C702],['C',0xFEEC04],['D',0xFC8A27],['R',0xFC0706]];
+const NUMS = [5,7,11,16,22,23,27,33,44,55,63,71,88,91,96,99];
+const NAMES = ['Jimin Park','Max Weber','Luca Rossi','Kenta Tanaka','Sergio Oliveira','Adam Novak',
+  'Remi Dubois','Tobias Andersson','Carlo Moretti','Davor Kovač','Hiro Nakamura','Filipe Costa',
+  'Grigory Martsenkov','Pierre Laurent','Nils Berg','Viktor Ivanov'];
+const GT3 = [['Ferrari 296 GT3','ferrari'],['Mercedes-AMG GT3','mercedes'],['Porsche 911 GT3 R','porsche'],['BMW M4 GT3','bmw']];
+const GT4 = [['BMW M4 GT4','bmw'],['Porsche 718 GT4','porsche'],['Mercedes-AMG GT4','mercedes'],['Aston Martin Vantage GT4','aston']];
+const CORNERS = [
+  {s:600, v:31, dir:1}, {s:1250, v:19, dir:-1}, {s:1900, v:45, dir:1},
+  {s:2700, v:24, dir:-1}, {s:3600, v:33, dir:1},
+];
+const TRACK = 4500, VMAX = 68, CAP = 30*60;
+const LOCK = 400; // 조향 최대각 — 좌 400 / 우 400 (총 800도)
+// 스파크라인: 마지막 점을 현재값에 연동한 12점 상승 추세
+function spark(now, lo, hi, w, yLo, yHi){
+  const pts = [];
+  for(let i=0;i<12;i++){
+    const f = i/11;
+    const v = lo + (now - lo)*Math.pow(f, 0.85);
+    const y = yLo - (v - lo)/(hi - lo)*(yLo - yHi);
+    pts.push((w*f).toFixed(1)+','+Math.max(yHi, Math.min(yLo, y)).toFixed(1));
+  }
+  const last = pts[pts.length-1].split(',');
+  return { line: pts.join(' '), area: pts.join(' ')+' '+w+','+(yLo+2)+' 0,'+(yLo+2), cx: last[0], cy: last[1] };
+}
+// 추세 그래프: 지금(w)에서 반주기 뒤까지 12점 — 실제 이력처럼 오르내린다
+function series(fn, w, lo, hi, width, yLo, yHi){
+  const pts = [];
+  for(let i=0;i<12;i++){
+    const u = w - (11 - i)*(Math.PI/11);
+    const v = Math.max(lo, Math.min(hi, fn(u)));
+    const y = yLo - (v - lo)/(hi - lo)*(yLo - yHi);
+    pts.push((width*(i/11)).toFixed(1)+','+y.toFixed(1));
+  }
+  const last = pts[pts.length-1].split(',');
+  return { line: pts.join(' '), area: pts.join(' ')+' '+width+','+(yLo+2)+' 0,'+(yLo+2), cx: last[0], cy: last[1] };
+}
+function prefix(p, o){
+  const out = {};
+  for(const k in o) out[p + k[0].toUpperCase() + k.slice(1)] = o[k];
+  return out;
+}
+const GEARS = [0,14,24,35,46,57,80];
+
+function hex(n){ return '#' + n.toString(16).padStart(6,'0').toUpperCase(); }
+function mix(a,b,k){
+  const pa = parseInt(a.slice(1),16), pb = parseInt(b.slice(1),16);
+  const r = Math.round(((pa>>16)&255)+((((pb>>16)&255)-((pa>>16)&255))*k));
+  const g = Math.round(((pa>>8)&255)+((((pb>>8)&255)-((pa>>8)&255))*k));
+  const bl = Math.round((pa&255)+(((pb&255)-(pa&255))*k));
+  return 'rgb('+r+','+g+','+bl+')';
+}
+function lighten(rgb){
+  let r=(rgb>>16)&255,g=(rgb>>8)&255,b=rgb&255;
+  r+=Math.floor((255-r)*35/100); g+=Math.floor((255-g)*35/100); b+=Math.floor((255-b)*35/100);
+  return hex((r<<16)|(g<<8)|b);
+}
+function irRgb(ir){ return ir>=5000?0xFFC44D: ir>=4000?0xC08CF0: ir>=3000?0x5BA8F0: ir>=2000?0x4FCB74: ir>=1000?0xE6EAF0:0x8A929E; }
+function irText(ir){ return ir<=0?'—': ir>=1000?(ir/1000).toFixed(1)+'k': String(ir); }
+function abbrev(f){ const i=f.indexOf(' '); return (i<=0||i>=f.length-1)?f:f[0]+'. '+f.slice(i+1); }
+function lapStr(s){ if(s<=0) return '--:--'; const m=Math.floor(s/60); const r=s-m*60; return m+':'+(r<10?'0':'')+r.toFixed(3); }
+function remainStr(s){ if(s<=0) return '--:--'; const m=Math.floor(s/60), sec=Math.floor(s%60); return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'); }
+const FR = { bar:'#0D111A', head:'#0F131D', row:'#131824', myRow:'#1A2131', clsHead:'#161C2A',
+  dimIn:'#A0A8B4', lapUp:'#C47E68', lapDown:'#6291DD', loss:'#FF6B6B', plate:'#1C2026', hair:'rgba(230,234,240,0.07)' };
+function mixHex(a,b,k){
+  const pa=parseInt(a.slice(1),16), pb=parseInt(b.slice(1),16);
+  const r=Math.round(((pa>>16)&255)+((((pb>>16)&255)-((pa>>16)&255))*k));
+  const g=Math.round(((pa>>8)&255)+((((pb>>8)&255)-((pa>>8)&255))*k));
+  const bl=Math.round((pa&255)+(((pb&255)-(pa&255))*k));
+  return hex((r<<16)|(g<<8)|bl);
+}
+function chip(bg, licHex, licStr){
+  const n = parseInt(licHex.slice(1),16);
+  const sp = licStr.indexOf(' ');
+  return { srBg: mixHex(bg, licHex, 0.17), srBd: mixHex(bg, licHex, 0.44),
+    srFg: lighten(n), srGrade: sp>0?licStr.slice(0,sp):licStr, srScore: sp>0?licStr.slice(sp+1):'' };
+}
+function lumDark(rgb){ const r=(rgb>>16)&255,g=(rgb>>8)&255,b=rgb&255; return 0.299*r+0.587*g+0.114*b>150; }
+
+class Component extends DCLogic {
+  inputRef = React.createRef();
+  spotterRef = React.createRef();
+  state = {
+    win:{input:true, relative:true, standings:true, weather:true, wind:true, spotter:true, approach:true, delta:true},
+    arrange:false, tab:'일반', tick:0, optTab:'입력',
+    relTier:2, stdTier:2, wheel:null, dRef:null,
+    inTier:3, inAxis:null, inWatermark:true, inBars:true, inWheel:true,
+  };
+
+  constructor(props){
+    super(props);
+    this.t = 0; this.s = 300; this.v = 40; this.gear = 4;
+    this.rpm = 0.5; this.thr = 1; this.brk = 0; this.clu = 0; this.steer = 0; this.absOn = false;
+    this.remain = 44*60+47; this.playerLaps = 12;
+    this.buf = {T:[],B:[],C:[],S:[],A:[]};
+    this.field = NAMES.map((n,i)=>{
+      const gt3 = i<8;
+      const car = gt3 ? GT3[i%4] : GT4[i%4];
+      const [lc,lcol] = LICS[i%5];
+      return {
+        idx:i, num:NUMS[i], name:n, isPlayer:i===0,
+        cls: gt3?'GT3':'GT4', clsColor: gt3?'#2E6FD6':'#D98324',
+        carName:car[0], logo:'assets/logos/'+car[1]+'.png',
+        lic: lc+' '+(1+((i*37)%400)/100).toFixed(2), licColor: lcol,
+        ir: 1200 + ((i*731)%4300),
+        pace: (gt3?96.4:104.2) + ((i*13)%9)*0.28,
+        prog: 12 + 0.94 - i*0.021,
+        // 플레이어 기준 상대 시간(초, +면 앞) — 팩을 현실적인 범위에 묶어 둔다
+        rel: i===0 ? 0 : (gt3 ? 18.4 - i*5.3 : -26 - (i-8)*9.4),
+        best: 0, last: 0, pit: i===11, inWorld: i!==14,
+      };
+    });
+    this.field.forEach(c=>{ c.best = c.pace-0.9; c.last = c.pace+((c.idx*7)%11)*0.06; });
+    this.field[14].prog = 6.2;
+    this.field[0].prog = 12 + 0.94 - 7*0.021;   // 플레이어는 중위권(≈8위)에서 시작
+    this.field[2].lapOffset = 1;                 // 나보다 한 랩 앞선 차 — 내가 길을 내줄 쪽(블루 플래그)
+    this.field[5].lapOffset = 1;                 // 한 랩 앞선 두 번째 차 — 둘이 겹치면 다중 위협
+    this.pbLap = 101.902; this.sbLap = 101.634; this.lastLap = 102.350;   // 내 PB · 세션 최고 · 직전 랩
+    this.simApproach();                          // 첫 프레임 전에도 접근 창 상태를 갖춘다
+    this.simDelta();                             // 델타도 동일하게 시드
+  }
+
+  // ?demo — GitHub Pages 등에 올릴 때: 문서를 감추고 재현 화면만 뷰포트에 맞춘다
+  demoMode(){
+    if(!/[?&]demo/.test(location.search)) return;
+    const frame = [...document.querySelectorAll('div')].find(d=>d.style.width==='1920px' && d.style.height==='1080px');
+    if(!frame) return;
+    const holder = frame.parentElement, section = holder.closest('section');
+    if(!section) return;
+    [...section.parentElement.children].forEach(s=>{ if(s !== section) s.style.display = 'none'; });
+    [...section.children].forEach(c=>{ if(c !== holder) c.style.display = 'none'; });
+    section.style.padding = '0'; section.style.maxWidth = 'none';
+    document.body.style.margin = '0';
+    document.body.style.background = '#000';
+    frame.style.border = 'none';
+    const fit = ()=>{
+      const k = Math.min(innerWidth/1920, innerHeight/1080);
+      frame.style.transform = 'scale('+k+')';
+      holder.style.width = (1920*k)+'px';
+      holder.style.height = (1080*k)+'px';
+      holder.style.margin = ((innerHeight-1080*k)/2)+'px auto 0';
+    };
+    fit(); addEventListener('resize', fit);
+  }
+
+  componentDidMount(){
+    this.demoMode();
+    this.wheelImg = new Image(); this.wheelImg.src = 'assets/wheel.png';
+    this.last = performance.now();
+    this.tableStamp = 0;
+    const loop = (now)=>{
+      const dt = Math.min(0.05,(now-this.last)/1000); this.last = now;
+      this.sim(dt);
+      // 고스트(베스트 랩) 스냅샷 — 버퍼가 한 창(8s) 차면 한 번 고정
+      if(!this.ghost && this.buf.T.length >= 480){
+        const sh = a => { const s = a.slice(-480); return s.slice(14).concat(s.slice(0,14)); };
+        this.ghost = { T: sh(this.buf.T), B: sh(this.buf.B) };
+      }
+      this.drawInput(); this.drawSpotter();
+      if(now - this.tableStamp > 120){ this.tableStamp = now; this.setState(s=>({tick:s.tick+1})); }
+      this.raf = requestAnimationFrame(loop);
+    };
+    this.raf = requestAnimationFrame(loop);
+  }
+  componentWillUnmount(){ cancelAnimationFrame(this.raf); }
+
+  // 배경 영상(74s 루프)에서 실측한 횡방향 곡선 — 0.5s 간격, +면 우회전
+  vidLat(t){
+    if(!VID_LAT.length) return null;
+    const x = (t/0.5) % VID_LAT.length;
+    const i = Math.floor(x), f = x - i;
+    return VID_LAT[i]*(1-f) + VID_LAT[(i+1)%VID_LAT.length]*f;
+  }
+
+  sim(dt){
+    this.t += dt; this.remain = Math.max(0, this.remain - dt);
+    // ── 배경 영상 동기: 영상 시각으로 조향·목표 속도를 구동 ──
+    if(this.bgVideo === undefined){
+      this.bgVideo = document.querySelector('video[src*="iRacing_onboard"]') || null;
+    }
+    if(this.bgVideo && !this.bgVideo.paused){
+      const vt = this.bgVideo.currentTime;
+      const lat = this.vidLat(vt), ahead = this.vidLat(vt + 1.6);
+      const st = Math.max(-1, Math.min(1, -lat*3.4));
+      this.steerV = this.steerV === undefined ? st : this.steerV + (st - this.steerV)*Math.min(1, dt*3.2);
+      this.steer = this.steerV;
+      const tight = Math.min(1, Math.abs(ahead)*3.4);
+      const target = VMAX - (VMAX - 34)*tight;
+      const err = target - this.v;
+      this.thr = Math.max(0, Math.min(1, err/4));
+      this.brk = Math.max(0, Math.min(1, -err/5));
+      this.v += (this.thr*7.5 - this.brk*13 - 0.02*this.v) * dt;
+      this.v = Math.max(8, Math.min(VMAX, this.v));
+      this.s += this.v*dt;
+      let g = 1; for(let i=1;i<GEARS.length-1;i++) if(this.v >= GEARS[i]) g = i+1;
+      this.clu = g !== this.gear ? 0.85 : Math.max(0, this.clu - dt*5);
+      this.gear = g;
+      const lo = GEARS[g-1], hi = GEARS[g];
+      this.rpm = Math.max(0.28, Math.min(1, 0.42 + 0.56*(this.v-lo)/(hi-lo)));
+      this.absOn = this.brk > 0.72 && Math.sin(this.t*24) > -0.2;
+      const push2 = (k,v)=>{ const b=this.buf[k]; b.push(v); if(b.length>CAP) b.shift(); };
+      push2('T',this.thr); push2('B',this.brk); push2('C',this.clu);
+      push2('S',(this.steer+1)/2); push2('A',this.absOn?1:0);
+      this.simField(dt);
+      return;
+    }
+    // 목표 속도: 앞쪽 코너를 브레이킹 거리로 역산
+    let target = VMAX;
+    for(const c of CORNERS){
+      let d = c.s - (this.s % TRACK);
+      if(d < -120) d += TRACK;
+      if(d < -40) continue;
+      const allow = Math.sqrt(Math.max(0,c.v*c.v + 2*12*Math.max(0,d)));
+      target = Math.min(target, d < 60 ? c.v + Math.max(0,d)*0.05 : allow);
+    }
+    const err = target - this.v;
+    this.thr = Math.max(0, Math.min(1, err/4));
+    this.brk = Math.max(0, Math.min(1, -err/5));
+    this.v += (this.thr*7.5 - this.brk*13 - 0.02*this.v) * dt;
+    this.v = Math.max(8, Math.min(VMAX, this.v));
+    this.s += this.v*dt;
+    const sp = this.s % TRACK;
+    let st = 0;
+    for(const c of CORNERS){
+      let d = sp - c.s; if(d > TRACK/2) d -= TRACK; if(d < -TRACK/2) d += TRACK;
+      st += c.dir * Math.exp(-Math.pow(d/170,2)) * (1 - c.v/62);
+    }
+    this.steer = Math.max(-1, Math.min(1, st*1.35));
+    let g = 1; for(let i=1;i<GEARS.length-1;i++) if(this.v >= GEARS[i]) g = i+1;
+    const shifted = g !== this.gear;
+    this.clu = shifted ? 0.85 : Math.max(0, this.clu - dt*5);
+    this.gear = g;
+    const lo = GEARS[g-1], hi = GEARS[g];
+    this.rpm = Math.max(0.28, Math.min(1, 0.42 + 0.56*(this.v-lo)/(hi-lo)));
+    this.absOn = this.brk > 0.72 && Math.sin(this.t*24) > -0.2;
+    const push = (k,v)=>{ const b=this.buf[k]; b.push(v); if(b.length>CAP) b.shift(); };
+    push('T',this.thr); push('B',this.brk); push('C',this.clu); push('S',(this.steer+1)/2); push('A',this.absOn?1:0);
+    this.simField(dt);
+  }
+
+  simField(dt){
+    // 필드 진행
+    for(const c of this.field){
+      if(!c.inWorld) continue;
+      if(c.isPlayer){ c.prog += (this.v*dt) / TRACK; continue; }
+      // 상대 시간만 천천히 흔들고(±) 피트 중이면 뒤로 밀린다 — 랩 단위로 흩어지지 않는다
+      // 재현용: 뒤차 한 대(#7)는 주기적으로 병주 구간(±1.1s)까지 들어와 스포터가 실제로 뜬다
+      if(c.idx === 1){
+        c.rel = -2.6*Math.sin(this.t/6.5);
+        const relDot = -(2.6/6.5)*Math.cos(this.t/6.5); // 해석적 미분
+        c.closeRate = -Math.sign(c.rel || 1) * relDot;
+        continue;
+      }
+      if(c.lapOffset){
+        // 랩이 다른 차는 주기를 달리해 뒤에서 붙는다 — #7과 위상이 겹치면 다중 위협
+        const T = c.idx === 2 ? 9.2 : 13.0, ph = c.idx === 2 ? 0.9 : 2.1, AMP = c.idx === 2 ? 4.4 : 6.0;
+        c.rel = -AMP*Math.sin(this.t/T + ph);
+        const relDot0 = -(AMP/T)*Math.cos(this.t/T + ph);
+        c.closeRate = -Math.sign(c.rel || 1) * relDot0;
+        continue;
+      }
+      const relDot = Math.sin(this.t/9 + c.idx*1.7)*0.42 - (c.pit ? 7.5 : 0);
+      c.closeRate = -Math.sign(c.rel || 1) * relDot; // +면 간격이 줄어드는 중
+      c.rel += relDot * dt;
+      c.rel = Math.max(-118, Math.min(62, c.rel));
+    }
+    const me0 = this.field[0];
+    for(const c of this.field){
+      if(c.isPlayer || !c.inWorld) continue;
+      c.prog = me0.prog + c.rel / c.pace + (c.lapOffset || 0);
+    }
+    this.playerLaps = Math.floor(this.field[0].prog);
+    this.simApproach();
+    this.simDelta();
+  }
+
+  // ── 접근 (APPROACH) — 뒤에서 붙는 차만 위험 축으로 환산 ──
+  // 없으면 this.appr = null → 창이 아예 존재하지 않는다(규칙 3)
+  simApproach(){
+    const TRIG = 8;                 // 게이지 오른쪽 기준선 = 내 차
+    const me = this.field[0];
+    const cands = [];
+    for(const c of this.field){
+      if(c.isPlayer || !c.inWorld || c.pit) continue;
+      const gap = -c.rel;                       // +면 내 뒤
+      if(gap <= 0.05 || gap > TRIG) continue;
+      const rate = c.closeRate || 0;            // +면 간격이 줄어드는 중
+      if(rate <= 0.02) continue;
+      const danger = Math.max(0, Math.min(1, 1 - gap/TRIG));
+      cands.push({ c, gap, rate, danger, lap: c.lapOffset || 0 });
+    }
+    cands.sort((a,b)=> a.gap - b.gap);
+    if(cands.length){
+      const p = cands[0];
+      this.apprHold = { idx: p.c.idx, t: this.t };
+      this.appr = { clear:false, car:p.c, gap:p.gap, danger:p.danger, lap:p.lap, n:cands.length,
+        marks: cands.slice(0,3).map((o,i)=>({ ...o, primary: i===0 })) };
+      return;
+    }
+    // 추월당함 — 마지막으로 붙던 차가 앞으로 나갔으면 1.5초만 CLEAR로 남긴다
+    const h = this.apprHold;
+    if(h && this.t - h.t < 1.5){
+      const c = this.field[h.idx];
+      if(c && c.rel > 0){ this.appr = { clear:true, car:c, lap:c.lapOffset || 0 }; return; }
+    }
+    this.appr = null;
+  }
+
+  // ── 델타 — 기준 랩 대비 누적 이득/손실 ──
+  simDelta(){
+    const t = this.t;
+    const d = 0.52*Math.sin(t/7.3) + 0.3*Math.sin(t/2.9+1.1) + 0.11*Math.sin(t/1.27+2.2);
+    this.dPrev = this.dVal == null ? d : this.dVal;
+    this.dVal = d;
+  }
+
+  deltaVals(){
+    const RANGE = 1.5, HALF = 300, C = 310;          // 중앙 = 기준 랩, ±1.5s에서 포화
+    const px = v => Math.max(-HALF, Math.min(HALF, v/RANGE*HALF));
+    // 기준 축은 리모컨에서 고른다 — 고르지 않은 기준은 같은 축의 속 빈 고스트로 남는다
+    const refs = { pb:{ lap: this.pbLap, tag:'PB', col:'#C08CF0' },
+                   sb:{ lap: this.sbLap, tag:'SB', col:'#FFC44D' },
+                   last:{ lap: this.lastLap, tag:'LAST', col:null } };
+    const sel = this.state.dRef ?? this.props.deltaRef;
+    const rk = refs[sel] ? sel : 'pb';
+    const base = refs[rk].lap;
+    const d = (this.dVal || 0) + (this.pbLap - base);  // 시뮬은 PB 기준 → 선택한 기준으로 이동
+    const prev = (this.dPrev == null ? d : this.dPrev + (this.pbLap - base));
+    // 데드밴드 ±0.05 — 이 안에서는 색이 깜빡이지 않도록 중립 회색
+    const col = d < -0.05 ? '#3FC380' : d > 0.05 ? '#E54B4B' : '#8A929E';
+    const rgb = col === '#3FC380' ? '63,195,128' : col === '#E54B4B' ? '229,75,75' : '138,146,158';
+    const x = px(d);
+    const rate = d - prev;                             // 지금 벌고 있나 잃고 있나
+    const trend = !Number.isFinite(rate) || Math.abs(rate) < 0.0015 ? '' : rate < 0 ? '▼' : '▲';
+    const ghosts = ['pb','sb'].filter(k => k !== rk)
+      .map(k => ({ key:k, gx: px(refs[k].lap - base), col: refs[k].col }))
+      .filter(g => Math.abs(g.gx) > 2)
+      .map(g => ({ key:g.key, x: C + g.gx - 2.5, col:g.col }));
+    const fmt = s => { const m = Math.floor(s/60), r = s - m*60; return m + ':' + (r<10?'0':'') + r.toFixed(3); };
+    return {
+      winDelta: this.state.win.delta !== false,
+      dOn: true,
+      dRefTag: 'PROJ · ' + refs[rk].tag, dRefTime: fmt(base + d),
+      dTxt: (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(2),
+      dCol: col,
+      dTrend: trend, dTrendCol: rate < 0 ? '#3FC380' : '#E54B4B',
+      dFillX: C + Math.min(0, x), dFillW: Math.abs(x),
+      dFillBg: 'rgba(' + rgb + ',.32)',
+      dGhosts: ghosts,
+      dCapX: C + x - 1.5,
+    };
+  }
+
+  approachVals(){
+    const A = this.appr, on = !!A, USABLE = 404;
+    const chip = this.clsChip(on ? A.car.cls : 'GT3');
+    const col = d => d > 0.72 ? '#E54B4B' : d > 0.34 ? '#E6B450' : '#8A929E';
+    const rgb = c => c === '#E54B4B' ? '229,75,75' : c === '#E6B450' ? '230,180,80' : '138,146,158';
+    const marks = (on && !A.clear ? A.marks : []).map((m,i)=>{
+      const c = col(m.danger), x = m.danger*USABLE;
+      // 꼬리 = 접근 속도. WPF는 랩당 초 × 40px, 여기선 시뮬의 초/초를 랩 스케일로 환산
+      const tw = Math.max(8, Math.min(x, Math.min(2.2, m.rate*3.1)*57));
+      return { key:m.c.idx, x, w: m.primary ? 7 : 4, ins: m.primary ? 0 : 3,
+        col:c, tailX: x - tw, tailW: tw,
+        tail:'linear-gradient(to right,rgba('+rgb(c)+',0),rgba('+rgb(c)+',.55))' };
+    });
+    return {
+      winApproach: this.state.win.approach !== false,
+      apprOn: on, apprClear: on && A.clear, apprLive: on && !A.clear,
+      apprAlarm: on && !A.clear && A.danger > 0.72,
+      apprCls: on ? A.car.cls : '', apprClsBg: chip.bg, apprClsBd: chip.bd, apprClsFg: chip.fg,
+      apprNum: on ? '#'+A.car.num : '', apprName: on ? A.car.name : '',
+      apprGap: on && !A.clear ? A.gap.toFixed(1) : '',
+      apprGapColor: on && !A.clear ? col(A.danger) : '#8A929E',
+      // 랩 관계 = 왼쪽 5px 엣지. 적갈 = 내가 길을 내줄 차(한 바퀴 앞) · 청 = 내가 랩할 백마커
+      apprHasEdge: on && !!A.lap,
+      apprEdgeColor: on && A.lap > 0 ? '#C47E68' : '#6291DD',
+      apprMarks: marks,
+    };
+  }
+
+  // 클래스 칩 — 표면에서 파생(절대값 금지), 클래스 채널색이 테두리
+  clsChip(cls){
+    return cls === 'GT3'
+      ? { bg:'#1C2637', bd:'#3A6AA8', fg:'#8FB6F0' }
+      : { bg:'#37332C', bd:'#705D37', fg:'#E6B450' };
+  }
+
+  // 배치 모드 외곽선 — 창 목록과 티어에서 파생한다. 사각형을 따로 적어 두면 티어를 바꿀 때 어긋난다
+  arrangeBoxes(){
+    const REL = {1:[1355,755,560,320], 2:[1495,855,420,220], 3:[1595,915,320,160]};
+    const STD = {1:[1195,5,700,460], 2:[1395,5,520,340], 3:[1535,5,380,240]};
+    const [iw,ih] = IN_TIERS[this.state.inTier];
+    const win = this.state.win, out = [];
+    const add = (key,on,x,y,w,h)=>{ if(on) out.push({key,x,y,w,h}); };
+    add('weather', win.weather, 5,5,268,272);
+    add('wind', win.wind !== false, 289,5,152,174);
+    add('standings', win.standings, ...STD[this.state.stdTier]);
+    add('relative', win.relative, ...REL[this.state.relTier]);
+    add('input', win.input, 960-iw/2, 954-ih, iw, ih);
+    add('approach', win.approach !== false && !!this.appr, 750,20,420,62);
+    add('delta', win.delta !== false, 650,92,620,58);
+    add('spotter', win.spotter, 0,300,1920,480);
+    return out;
+  }
+
+  // ── 캔버스: 입력 창 ─────────────────────────────
+  drawInput(){
+    const cv = this.inputRef.current; if(!cv) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = parseFloat(cv.style.width) || 880, h = parseFloat(cv.style.height) || 280;
+    if(cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){
+      cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+    }
+    const g = cv.getContext('2d');
+    g.setTransform(dpr,0,0,dpr,0,0);
+    g.clearRect(0,0,w,h);
+    g.save();
+    g.beginPath(); g.roundRect(0,0,w,h,6); g.clip();
+    // 상단 바 + 세 패널만 불투명 (창 전체를 칠하지 않음)
+    // 휠 패널 폭은 모드 가변 — 원형 림은 아크 외경(r64+stroke) + 여백만 필요
+    this.wheelMode = this.state.wheel ?? this.props.wheelMode ?? 'ring';
+    // 원형 림: 그려지는 아크 외경(기준 133)에서 폭을 역산 — 림이 작아지면 패널도 좁아진다
+    this.wheelK = Math.min(1, ((h - 28 - 16) / 2) / 66.5);
+    const wheelW = this.state.inWheel === false ? 0
+      : this.wheelMode === 'photo' ? 186 : Math.round(132*this.wheelK) + 16;
+    // 입력 바 패널은 끌 수 있다 — 끄면 트레이스가 그 폭을 흡수한다
+    const barsW = this.state.inBars ? 114 : 0;
+    const barsX = w - wheelW - barsW, wheelX = w - wheelW;
+    g.fillStyle = '#0D111A'; g.fillRect(0,0,w,28);
+    g.fillStyle = '#131824'; g.fillRect(0,28,barsX,h-28);
+    if(wheelW) g.fillRect(wheelX,28,wheelW,h-28);
+    if(barsW) g.fillRect(barsX,28,barsW,h-28);
+    g.fillStyle = 'rgba(230,234,240,0.07)';
+    g.fillRect(0,27,w,1);
+    if(wheelW) g.fillRect(wheelX,28,1,h-28);
+    if(barsW) g.fillRect(barsX,28,1,h-28);
+    this.drawInputHeader(g, w);
+    // 저하 순서: 축 라벨 → 고스트. 축 라벨은 컨트롤로 뒤집을 수 있고,
+    // 고스트는 창 높이만 본다 — 컨트롤을 두지 않는다.
+    this.axisOn = this.state.inAxis ?? (h >= 240);
+    this.ghostOn = h >= 200;
+    this.drawTrace(g, barsX, h);
+    if(barsW) this.drawBars(g, barsX, 0, barsW, h);
+    if(wheelW) this.drawWheel(g, wheelX, 0, wheelW, h);
+    g.restore();
+  }
+
+  drawInputHeader(g, w){
+    g.textBaseline = 'middle';
+    g.fillStyle = '#3FC380'; g.beginPath(); g.arc(17,14,3,0,Math.PI*2); g.fill();
+    g.fillStyle = '#E6EAF0'; g.font = '700 10px '+FONT;
+    g.letterSpacing = '1.2px'; g.fillText('INPUT', 26, 14);
+    const iw = g.measureText('INPUT').width;
+    g.letterSpacing = '1px'; g.font = '600 9px '+FONT; g.fillStyle = '#8A929E';
+    const gx = 26 + iw + 16; g.fillText('GHOST', gx, 14);
+    const gw = g.measureText('GHOST').width;
+    g.letterSpacing = '0px'; g.font = '600 12px '+FONT; g.fillStyle = '#E6EAF0';
+    g.fillText('1:35.788', gx + gw + 5, 14);
+    let x = w - 14;
+    g.textAlign = 'right'; g.font = '600 10px '+FONT; g.letterSpacing = '0.6px';
+    for(const [lab,col] of [['S','#B07AF0'],['C','#5BA8F0'],['B','#E54B4B'],['T','#3FC380']]){
+      g.fillStyle = '#E6EAF0'; g.fillText(lab, x, 14);
+      const lw = g.measureText(lab).width;
+      g.fillStyle = col; g.beginPath(); g.arc(x-lw-5-3.5, 14, 3.5, 0, Math.PI*2); g.fill();
+      x -= lw + 5 + 7 + 11;
+    }
+    g.textAlign = 'left'; g.letterSpacing = '0px';
+  }
+
+  // 목업 I1 기준 좌표: 플롯 left 41 · y 44→254 · 폭 가변(링 566 / 사진 528, 휠 패널 폭에서 역산)
+  drawTrace(g, w, h){
+    const pl = this.axisOn ? 41 : 11, pw = w - pl - 11;
+    const vt = 44, footH = 26, vh = h - vt - footH;
+    // 그리드 · 50% 기준선
+    for(let i=0;i<5;i++){
+      const y = vt + vh*i/4 + 0.5;
+      g.strokeStyle = i===2 ? '#6C707A' : '#464A55'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(pl,y); g.lineTo(pl+pw,y); g.stroke();
+    }
+    // 축 라벨 (좌측 고정) — 좁은 티어에서 가장 먼저 내린다
+    if(this.axisOn){
+      g.font = '600 9px '+FONT; g.fillStyle = '#8A929E';
+      g.textAlign = 'right'; g.textBaseline = 'middle'; g.letterSpacing = '1px';
+      ['100','75','50','25','0'].forEach((t,i)=> g.fillText(t, 35, vt + vh*i/4));
+      g.letterSpacing = '0px';
+    }
+    // 워터마크: 속도 · 기어
+    const cx = pl + pw/2;
+    g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+    const spdSize = Math.round(vh*0.343), gearSize = Math.round(vh*0.190);
+    if(this.state.inWatermark){
+      g.font = '600 '+spdSize+'px '+FONT; g.fillStyle = 'rgba(230,234,240,0.20)';
+      g.letterSpacing = '-2px';
+      g.fillText(String(Math.round(this.v*3.6)), cx, vt + vh*0.392);
+      g.letterSpacing = '0px';
+      g.font = '600 '+gearSize+'px '+FONT; g.fillStyle = 'rgba(230,180,80,0.34)';
+      const gr = this.gear;
+      g.fillText(gr <= -1 ? 'R' : gr === 0 ? 'N' : String(gr), cx, vt + vh*0.823);
+    }
+    g.textAlign = 'left';
+    // 트레이스
+    g.save(); g.beginPath(); g.rect(pl,vt,pw,vh); g.clip();
+    const win = 8*60, stepX = pw/(win-1);
+    const px = (i,cnt) => pl + pw - (cnt-1-i)*stepX;
+    // 고스트 (점선)
+    if(this.ghost && this.ghostOn){
+      g.setLineDash([3,3]); g.globalAlpha = 0.32; g.lineWidth = 1.5;
+      for(const [k,col] of [['T','#3FC380'],['B','#E54B4B']]){
+        const b = this.ghost[k]; if(!b || b.length<2) continue;
+        const cnt = Math.min(b.length, win), off = b.length - cnt;
+        g.beginPath(); g.moveTo(px(0,cnt), vt+vh-b[off]*vh);
+        for(let i=1;i<cnt;i++) g.lineTo(px(i,cnt), vt+vh-b[off+i]*vh);
+        g.strokeStyle = col; g.stroke();
+      }
+      g.setLineDash([]); g.globalAlpha = 1;
+    }
+    // 브레이크 면 채움 15%
+    {
+      const b = this.buf.B, cnt = Math.min(b.length, win);
+      if(cnt >= 2){
+        const off = b.length - cnt;
+        g.beginPath(); g.moveTo(px(0,cnt), vt+vh);
+        for(let i=0;i<cnt;i++) g.lineTo(px(i,cnt), vt+vh-b[off+i]*vh);
+        g.lineTo(px(cnt-1,cnt), vt+vh); g.closePath();
+        g.fillStyle = 'rgba(229,75,75,0.15)'; g.fill();
+      }
+    }
+    for(const [k,col,th] of [['S','#B07AF0',1.6],['C','#5BA8F0',1.8],['T','#3FC380',2.0],['B','#E54B4B',2.0]]){
+      const b = this.buf[k], cnt = Math.min(b.length, win); if(cnt<2) continue;
+      const off = b.length - cnt;
+      const py = i => vt + vh - b[off+i]*vh;
+      if(k==='B'){
+        const a = this.buf.A, ao = a.length - cnt;
+        let i0 = 0;
+        while(i0 < cnt-1){
+          const on = a[ao+i0+1] > 0.5; let i1 = i0+1;
+          while(i1 < cnt-1 && (a[ao+i1+1] > 0.5) === on) i1++;
+          g.beginPath(); g.moveTo(px(i0,cnt),py(i0));
+          for(let i=i0+1;i<=i1;i++) g.lineTo(px(i,cnt),py(i));
+          g.strokeStyle = on ? '#FFD11A' : col; g.lineWidth = on ? 2.6 : th; g.stroke();
+          i0 = i1;
+        }
+      } else {
+        g.beginPath(); g.moveTo(px(0,cnt),py(0));
+        for(let i=1;i<cnt;i++) g.lineTo(px(i,cnt),py(i));
+        g.strokeStyle = col; g.lineWidth = th; g.stroke();
+      }
+    }
+    g.restore();
+    // 시간축 라벨
+    g.font = '600 9px '+FONT; g.fillStyle = '#8A929E';
+    g.textBaseline = 'middle'; g.letterSpacing = '1px';
+    g.fillText('← 8S', pl, vt + vh + 17); g.letterSpacing = '0px';
+  }
+
+  drawGearStrip(g, cx, cy, centerSize){
+    const target = Math.max(-1, Math.min(8, this.gear)) + 1;
+    if(this.gearPos === undefined) this.gearPos = target;
+    this.gearPos += (target - this.gearPos) * 0.28;
+    const spacing = centerSize*0.95;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    for(let i=Math.max(0,Math.floor(this.gearPos)-2); i<=Math.min(9,Math.ceil(this.gearPos)+2); i++){
+      const d = Math.abs(i - this.gearPos); if(d > 2.4) continue;
+      const s = centerSize * Math.max(0.40, 1 - 0.34*d);
+      const a = Math.max(0.16, Math.min(1, (0xA8 - 60*d)/255));
+      const col = i===target ? (i===0 ? '229,75,75' : '230,180,80') : '184,192,204';
+      g.font = '700 '+s+'px '+FONT;
+      g.fillStyle = 'rgba('+col+','+a.toFixed(3)+')';
+      const label = i===0?'R': i===1?'N': String(i-1);
+      g.fillText(label, cx + (i-this.gearPos)*spacing, cy);
+    }
+    g.textAlign = 'left';
+  }
+
+  // 목업 I1: 바 x 10/45/80 · 폭 24 · top 12(패널 28) · 높이 165 · 값 13px · 라벨 9px
+  drawBars(g, x0, y0, w, h){
+    const items = [[this.clu,'#5BA8F0','CLU'],[this.brk, this.absOn?'#FFD11A':'#E54B4B','BRK'],[this.thr,'#3FC380','THR']];
+    const top = 40, barW = 24, barH = h - top - 48;
+    for(let i=0;i<3;i++){
+      const [v,col,lab] = items[i];
+      const x = x0 + 10 + i*35, cx = x + barW/2;
+      g.fillStyle = '#242C3C'; g.beginPath(); g.roundRect(x,top,barW,barH,4); g.fill();
+      const fh = barH*Math.max(0,Math.min(1,v));
+      if(fh>0){ g.fillStyle = col; g.beginPath(); g.roundRect(x,top+barH-fh,barW,fh,4); g.fill(); }
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = '#E6EAF0'; g.font = '600 13px '+FONT;
+      g.fillText(String(Math.round(v*100)), cx, top+barH+7+9);
+      g.fillStyle = '#8A929E'; g.font = '600 9px '+FONT; g.letterSpacing = '1px';
+      g.fillText(lab, cx, top+barH+7+18+2+7);
+      g.letterSpacing = '0px';
+    }
+    g.textAlign = 'left';
+  }
+
+  // Ascher 사진 모드 — D2dInputWindow.cs:91-101 의 실제 LED 좌표를 사진에 얹는다
+  drawWheelPhoto(g, x0, y0, w, h, lit, litC){
+    const img = this.wheelImg;
+    if(!img || !img.complete || !img.naturalWidth) return;
+    const cx = x0 + w/2, cy = 28 + (h-28)/2;
+    const k = Math.min((w-16)/img.naturalWidth, (h-64)/img.naturalHeight);
+    const bw = img.naturalWidth*k, bh = img.naturalHeight*k;
+    const bl = cx - bw/2, bt = cy - bh/2;
+    g.translate(cx,cy); g.rotate(-this.steer*LOCK*Math.PI/180); g.translate(-cx,-cy);
+    g.drawImage(img, bl, bt, bw, bh);
+    const rr = (13/1512)*bw, cover = rr*1.25, ly = bt + (55/811)*bh;
+    for(let i=0;i<16;i++){
+      const px = bl + ((552/1512) + ((1002-552)/1512)*i/15)*bw;
+      g.fillStyle = P.ledOff; g.beginPath(); g.arc(px,ly,cover,0,Math.PI*2); g.fill();
+      if(i < lit){ g.fillStyle = litC; g.beginPath(); g.arc(px,ly,rr,0,Math.PI*2); g.fill(); }
+    }
+    const sr = (10/1512)*bw, sc = sr*1.3;
+    for(const fx of [496/1512, 1025/1512]) for(const fy of [93/811,124/811,155/811]){
+      const px = bl+fx*bw, py = bt+fy*bh;
+      g.fillStyle = P.ledOff; g.beginPath(); g.arc(px,py,sc,0,Math.PI*2); g.fill();
+      if(this.absOn){ g.fillStyle = P.abs; g.beginPath(); g.arc(px,py,sr,0,Math.PI*2); g.fill(); }
+    }
+  }
+
+  drawWheel(g, x0, y0, w, h){
+    const cx = x0 + w/2, cy = 28 + (h-28)/2;
+    const t = (this.rpm - 0.55)/0.45;
+    const lit = Math.round(Math.max(0,Math.min(1,t))*16);
+    const flash = this.rpm >= 0.97 && (Math.floor(this.t*10) & 1) === 0;
+    const litC = flash ? '#FFFFFF' : (this.rpm < 0.85 ? P.ledGreen : this.rpm < 0.95 ? P.ledAmber : P.ledRed);
+    g.save();
+    g.beginPath(); g.rect(x0,y0,w,h); g.clip();
+    if(this.wheelMode === 'photo'){ this.drawWheelPhoto(g, x0, y0, w, h, lit, litC); g.restore(); return; }
+    // 림 + 12시 인덱스 (조향과 함께 회전)
+    g.save();
+    g.translate(cx,cy); g.rotate(-this.steer*LOCK*Math.PI/180);
+    const k = this.wheelK || 1;
+    g.strokeStyle = '#636872'; g.lineWidth = 11*k;
+    g.beginPath(); g.arc(0,0,52*k,0,Math.PI*2); g.stroke();
+    g.fillStyle = '#E6EAF0';
+    g.beginPath(); g.roundRect(-5*k,-57.5*k,10*k,11*k,2); g.fill();
+    g.restore();
+    // RPM 아크 (고정 — 회전하지 않음)
+    const R = 64*k, start = -158.8*Math.PI/180;
+    const gapA = 2.4*Math.PI/180, segA = 6.4*Math.PI/180;
+    g.lineWidth = 5*k; g.lineCap = 'butt';
+    for(let i=0;i<16;i++){
+      const a0 = start + i*(segA+gapA);
+      g.strokeStyle = i < lit ? litC : '#464A55';
+      g.beginPath(); g.arc(cx,cy,R,a0,a0+segA); g.stroke();
+    }
+    g.restore();
+  }
+
+  // ── 캔버스: 스포터 ───────────────────────────────
+  // 개선안: 차 단위 목록을 그대로 넘긴다 — 대수는 세그먼트 수, 위치는 세그먼트 위치
+  proximity(){
+    const me = this.field[0], out = {L:[], R:[]};
+    for(const c of this.field){
+      if(c.isPlayer || !c.inWorld) continue;
+      const gap = (c.prog - me.prog) * c.pace;
+      if(Math.abs(gap) > 1.1) continue;
+      // rel: +1 = 완전히 앞, 0 = 나란히, −1 = 완전히 뒤 / danger: 겹침 정도
+      const rel = Math.max(-1, Math.min(1, gap/1.1));
+      out[c.idx % 2 === 0 ? 'L' : 'R'].push({ rel, danger: 1 - Math.abs(rel), key:c.idx });
+    }
+    return out;
+  }
+
+  drawSpotter(){
+    const cv = this.spotterRef.current; if(!cv) return;
+    const dpr = window.devicePixelRatio || 1, w = 1920, h = 480;
+    if(cv.width !== Math.round(w*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
+    const g = cv.getContext('2d');
+    g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
+    if(!this.state.win.spotter) return;
+    const {L,R} = this.proximity();
+    this.spotterSide(g, L, true, w, h);
+    this.spotterSide(g, R, false, w, h);
+  }
+
+  // 개선안 — 길이 = 겹침 하나만 · 위치 = 앞/뒤 · 색 = 위험 3단계 · 대수 = 세그먼트 수
+  spotterSide(g, cars, isLeft, w, h){
+    if(!cars.length) return;
+    const BW = 14, PAD = 10, RAIL = h*0.62, top = (h - RAIL)/2;
+    const x = isLeft ? PAD : w - PAD - BW;
+    // 레일(내 차 길이 기준) — 위험 최고값으로만 톤을 정한다
+    const maxD = cars.reduce((m,c)=> Math.max(m, c.danger), 0);
+    g.fillStyle = 'rgba(230,234,240,0.10)';
+    g.beginPath(); g.roundRect(x, top, BW, RAIL, BW/2); g.fill();
+    // 내 차 위치 기준선 (레일 중앙)
+    g.fillStyle = 'rgba(230,234,240,0.35)';
+    g.fillRect(x - 4, top + RAIL/2 - 0.5, BW + 8, 1);
+    // 위험한 순서대로 자리를 잡는다. 4대 이상이면 위험한 3대만
+    const shown = cars.slice().sort((a,b)=> b.danger - a.danger).slice(0,3);
+    const placed = [];
+    for(const c of shown){
+      const col = c.danger > 0.72 ? '#E54B4B' : c.danger > 0.34 ? '#E6B450' : '#8A929E';
+      const segH = Math.max(18, RAIL*0.34*(0.45 + 0.55*c.danger));
+      const cy = top + RAIL/2 - c.rel*(RAIL/2 - segH/2);
+      let y0 = cy - segH/2, y1 = cy + segH/2;
+      // 겹치면 덜 위험한 쪽을 밀어 2px 비운다 — 그 틈으로 레일이 보이므로 테두리가 필요 없다
+      for(const p of placed){
+        if(y1 <= p.y0 - 2 || y0 >= p.y1 + 2) continue;
+        if(cy < (p.y0 + p.y1)/2) y1 = Math.min(y1, p.y0 - 2);
+        else y0 = Math.max(y0, p.y1 + 2);
+      }
+      if(y1 - y0 < 14){ if(cy < top + RAIL/2) y0 = y1 - 14; else y1 = y0 + 14; }
+      y0 = Math.max(top, y0); y1 = Math.min(top + RAIL, y1);
+      placed.push({y0, y1});
+      g.fillStyle = col;
+      g.beginPath(); g.roundRect(x, y0, BW, y1 - y0, BW/2); g.fill();
+    }
+    // 2대 이상이면 레일 밖에 대수 점 — 색이 아니라 개수로 말한다
+    if(cars.length >= 2){
+      const dx = isLeft ? x + BW + 7 : x - 7;
+      g.fillStyle = maxD > 0.72 ? '#E54B4B' : maxD > 0.34 ? '#E6B450' : '#8A929E';
+      for(let i=0;i<cars.length;i++){
+        g.beginPath(); g.arc(dx, top + RAIL/2 + (i - (cars.length-1)/2)*10, 2.5, 0, Math.PI*2); g.fill();
+      }
+    }
+  }
+
+
+  // ── 표 데이터 ───────────────────────────────────
+  sortedField(){
+    const me = this.field[0];
+    const live = this.field.filter(c=>c.inWorld).slice();
+    live.sort((a,b)=> b.prog - a.prog);
+    live.forEach((c,i)=> c.position = i+1);
+    const gone = this.field.filter(c=>!c.inWorld);
+    gone.forEach(c=> c.position = 0);
+    return {live, gone, me};
+  }
+
+  srBadge(c){
+    const dark = lumDark(c.licColor);
+    return { srBg: hex(c.licColor), srBd: lighten(c.licColor), srFg: dark ? '#121418' : P.text, sr: c.lic };
+  }
+
+  relRows(each){
+    const {live, me} = this.sortedField();
+    const arr = live.slice().sort((a,b)=> ((b.prog-me.prog)*b.pace) - ((a.prog-me.prog)*a.pace));
+    const mi = arr.findIndex(c=>c.isPlayer);
+    const side = each || 4; // 티어별 앞/뒤 표시 대수 (플레이어 중심 대칭)
+    // 개수를 고정하고 창을 밀어 앞/뒤 끝에서도 행이 비지 않게 한다
+    const n = Math.min(arr.length, 2*side+1);
+    const from = Math.min(Math.max(0, mi-side), arr.length-n), to = from+n-1;
+    const rows = [];
+    for(let i=from;i<=to;i++){
+      const c = arr[i];
+      // Relative 는 앞뒤 인접 차량 창이므로 ±99.9s 를 넘는 값은 의미가 없다
+      const gapRaw = (c.prog - me.prog) * c.pace;
+      const gap = Math.max(-99.9, Math.min(99.9, gapRaw));
+      const lapDiff = Math.round(c.prog - me.prog);
+      const bg = c.isPlayer ? FR.myRow : FR.row;
+      // 접근 속도는 실제 간격 변화율에서 — ▲ 줄어드는 중 / ▼ 벌어지는 중
+      const rate = c.isPlayer ? 0 : (c.closeRate || 0);
+      const closing = (c.isPlayer || lapDiff !== 0) ? '' : (c.pit ? 'PIT'
+        : (rate > 0 ? '▲ ' : '▼ ') + Math.abs(rate).toFixed(1));
+      rows.push(Object.assign({
+        key:c.idx, bg, cls:c.clsColor, markW: c.isPlayer ? 3 : 2,
+        pos:String(c.position), num:'#'+c.num,
+        logo:c.logo, name: abbrev(c.name), nw: c.isPlayer ? 700 : 400,
+        posC: c.isPlayer ? P.text : FR.dimIn,
+        ir: irText(c.ir), irC: hex(irRgb(c.ir)),
+        lapTok: lapDiff>0 ? '+1 LAP' : lapDiff<0 ? '−1 LAP' : '',
+        lapC: lapDiff>0 ? FR.lapUp : FR.lapDown,
+        gap: c.isPlayer ? '———' : (gap>=0?'+':'−') + Math.abs(gap).toFixed(1),
+        gapC: c.isPlayer ? P.dim : (gap>=0 ? P.ahead : P.behind),
+        closing, closingC: c.pit ? P.pit : (rate > 0 ? FR.loss : P.thr),
+        abbr: abbrev3(c.name), closeArrow: closing ? closing.slice(0,1) : '',
+      }, chip(bg, c.licColor ? hex(c.licColor) : '#8A929E', c.lic)));
+    }
+    return rows;
+  }
+
+  // 재현 화면 컨트롤 — 분절 선택기
+  seg(key, cur, opts){
+    return opts.map(([v,label])=>({
+      key:String(v), label, on: cur===v,
+      pick: ()=> this.setState({[key]: v}),
+      bg: cur===v ? '#1F2430' : 'transparent',
+      fg: cur===v ? '#FFFFFF' : '#5A6272' }));
+  }
+
+  stdRows(availIn){
+    const {live, gone} = this.sortedField();
+    const ordered = live.slice().sort((a,b)=> a.position - b.position);
+    const best = Math.min.apply(null, this.field.map(c=>c.best).filter(v=>v>0));
+    // 클래스 블록으로 재배치
+    const order = [];
+    ordered.forEach(c=>{ if(!order.includes(c.cls)) order.push(c.cls); });
+    const rows = [];
+    // ±iR: 제로섬 근사(순위 기반)
+    const n = live.length;
+    // 내 클래스 블록을 맨 앞으로
+    const myCls = (live.find(c=>c.isPlayer) || live[0]).cls;
+    order.sort((a,b)=> (a===myCls?0:1) - (b===myCls?0:1));
+    // ── 행 예산 역산 (창 460 = 세션 바 24 + 열 머리글 26 + 블록들) ──
+    const blocks = order.map(cls=>({
+      cls, live: ordered.filter(c=>c.cls===cls), gone: gone.filter(c=>c.cls===cls) }));
+    const nCls = blocks.length;
+    const cars = blocks.reduce((s,b)=> s + b.live.length + b.gone.length, 0);
+    const HEAD_H = 24, avail = availIn || (460 - 24 - 26);
+    let gap = 16, rowH = 0, slotsTotal = cars;
+    for(; gap >= 8; gap--){
+      const h = Math.floor((avail - nCls*HEAD_H - (nCls-1)*gap) / cars);
+      if(h >= 22){ rowH = Math.min(40, h); break; }
+    }
+    if(!rowH){ // 압축 모드 — 전원 표시 불가
+      gap = 8; rowH = 24;
+      slotsTotal = Math.floor((avail - nCls*HEAD_H - (nCls-1)*gap) / rowH);
+    }
+    // 안전 클램프 — 어떤 경우에도 avail 을 넘기지 않는다
+    slotsTotal = Math.min(slotsTotal,
+      Math.floor((avail - nCls*HEAD_H - (nCls-1)*gap) / rowH));
+    // 내 클래스 우선 배정
+    let left = slotsTotal;
+    for(const b of blocks){
+      const want = b.live.length + b.gone.length;
+      b.slots = Math.max(0, Math.min(want, left));
+      left -= b.slots;
+      b.hidden = want - b.slots;
+    }
+    for(const b of blocks){
+      const cls = b.cls, block = b.live, blockGone = b.gone;
+      let budget = b.slots;
+      rows.push({ key:'h-'+cls, isHead:true, isCar:false, h:HEAD_H,
+        gapTop: rows.length ? gap : 0,
+        bg: FR.clsHead, cls: block[0].clsColor,
+        headLabel: cls, headC: lighten(parseInt(block[0].clsColor.slice(1),16)),
+        mine: block.some(c=>c.isPlayer),
+        hidden: b.hidden ? '+'+b.hidden+' HIDDEN' : '',
+        headCount: String(block.length + blockGone.length), headCountX: 24 + cls.length*8.2 + 10 });
+      let prev = null, cp = 0;
+      for(const c of block){
+        cp++;
+        if(budget <= 0) break;
+        budget--;
+        let iv = '—';
+        if(prev){
+          const d = prev.prog - c.prog, laps = Math.floor(d);
+          iv = laps>0 ? '+'+laps+'랩' : '+'+(d*c.pace).toFixed(1);
+        }
+        prev = c;
+        const delta = Math.round((n/2 + 0.5 - c.position) * (2200/c.ir) * 3.1);
+        const isBest = c.best>0 && c.best <= best+0.0005;
+        rows.push(Object.assign({
+          key:c.idx, isHead:false, isCar:true, h:rowH, gapTop:0,
+          bg: c.isPlayer ? FR.myRow : FR.row, markW: c.isPlayer ? 3 : 0,
+          cls:c.clsColor, clsL: lighten(parseInt(c.clsColor.slice(1),16)), clsName:c.cls,
+          main:P.text, pos:String(cp), posC: c.isPlayer?P.text:FR.dimIn,
+          num:'#'+c.num, logo:c.logo, logoOp:1,
+          name:c.name, nw: c.isPlayer?700:400, abbr: abbrevName(c.name),
+          ir: irText(c.ir), irC: hex(irRgb(c.ir)),
+          delta: delta>0?'+'+delta:String(delta), dC: delta>0?P.thr: delta<0?FR.loss:P.dim,
+          best: lapStr(c.best), bestC: isBest?P.str:P.text, bestW: isBest?700:400,
+          last: lapStr(c.last), iv,
+          // 좁은 티어: PIT 는 별도 열 대신 GAP 슬롯을 교체한다
+          ivPit: c.pit ? 'PIT' : iv, ivPitC: c.pit ? P.pit : P.text,
+          tag: c.pit?'PIT':'', tagC: P.pit,
+        }, chip(c.isPlayer?FR.myRow:FR.row, c.licColor?hex(c.licColor):'#8A929E', c.lic)));
+      }
+      for(const c of blockGone){
+        if(budget <= 0) break;
+        budget--;
+        rows.push(Object.assign({
+          key:c.idx, isHead:false, isCar:true, h:rowH, gapTop:0, bg:FR.row, markW:0,
+          cls:c.clsColor, clsL: lighten(parseInt(c.clsColor.slice(1),16)), clsName:c.cls,
+          main:P.dim, pos:'—', posC:P.dim, num:'#'+c.num, logo:c.logo, logoOp:0.45,
+          name:c.name, nw:400, abbr: abbrevName(c.name), ir: irText(c.ir), irC: hex(irRgb(c.ir)),
+          delta:'0', dC:P.dim, best: lapStr(c.best), bestC:P.dim, bestW:400,
+          last: lapStr(c.last), iv:'—', ivPit:'OUT', ivPitC:'#8A929E', tag:'OUT', tagC:'#8A929E',
+        }, chip(FR.row, c.licColor?hex(c.licColor):'#8A929E', c.lic)));
+      }
+    }
+    // 클래스 블록 = 둥근 면. 블록 첫 행(헤드)에 위 모서리, 마지막 행에 아래 모서리.
+    // 열 머리글에 맞붙는 첫 블록은 위를 각지게 둔다.
+    rows.forEach((r,i)=>{
+      const isFirstOfBlock = r.isHead;
+      const isLastOfBlock = i === rows.length-1 || rows[i+1].isHead;
+      const topR = isFirstOfBlock && r.gapTop ? '6px' : '0';
+      const botR = isLastOfBlock ? '6px' : '0';
+      r.rad = topR+' '+topR+' '+botR+' '+botR;
+    });
+    return rows;
+  }
+
+  barItems(compact){
+    const {live, me} = this.sortedField();
+    const inc = 4, cap = 17;
+    const risk = inc/cap;
+    const items = compact ? [
+      ['RACE', 700, P.race],
+      ['P'+me.position+'/16', 700, P.text],
+      ['L '+this.playerLaps+'/32', 400, P.dim],
+      ['INC '+inc+'/'+cap, 400, risk>=0.85?P.urgent: risk>=0.6?P.race:P.dim],
+    ] : [
+      ['RACE', 700, P.race],
+      ['GREEN', 700, P.practice],
+      ['P'+me.position+'/16', 700, P.text],
+      ['L '+this.playerLaps+'/32', 400, P.dim],
+      [(32-this.playerLaps)+'랩 남음', 400, P.dim],
+      ['SOF 2.9k', 400, P.dim],
+      ['INC '+inc+'/'+cap, 400, risk>=0.85?P.urgent: risk>=0.6?P.race:P.dim],
+    ];
+    let x = compact ? 9 : 10; const out = [];
+    const cw = compact ? 6.6 : 7.9, gap = compact ? 12 : 16;
+    for(const [t,w,c] of items){
+      out.push({key:t, t, w, c, x});
+      x += t.length*cw + gap + (/[가-힣]/.test(t) ? t.replace(/[^가-힣]/g,'').length*5 : 0);
+    }
+    return out;
+  }
+
+  renderVals(){
+    const tabs = ['일반','입력','Relative','Standings','날씨 · 트랙','스포터'];
+    const labels = [['input','입력'],['relative','Relative'],['standings','Standings'],['weather','날씨'],['wind','바람'],['spotter','스포터'],['approach','접근'],['delta','델타']];
+    const win = this.state.win;
+    const rem = this.remain;
+    return {
+      ...this.approachVals(),
+      ...this.deltaVals(),
+      inputRef:this.inputRef, spotterRef:this.spotterRef,
+      arrange:this.state.arrange,
+      winRelative: win.relative, winStandings: win.standings,
+      winWeather: win.weather, winWind: win.wind !== false, winInput: win.input, winSpotter: win.spotter,
+      showInput: this.state.optTab==='입력',
+      showWeather: this.state.optTab==='날씨 · 트랙',
+      showWind: this.state.optTab==='바람',
+      showRelative: this.state.optTab==='Relative',
+      showStandings: this.state.optTab==='Standings',
+      showRemote: this.state.optTab==='리모컨',
+      showSpotter: this.state.optTab==='스포터',
+      showApproach: this.state.optTab==='접근',
+      showDelta: this.state.optTab==='델타',
+      optTabs: ['입력','날씨 · 트랙','바람','Relative','Standings','스포터','접근','델타','리모컨'].map(t=>({ key:t, label:t, pick: ()=> this.setState({optTab:t}),
+        bg: this.state.optTab===t ? 'var(--color-accent)' : 'transparent',
+        fg: this.state.optTab===t ? 'var(--color-bg)' : 'var(--color-text)' })),
+      toggleArrange: ()=> this.setState(s=>({arrange:!s.arrange})),
+      connDot:'●', connText:'연결됨', connColor:'#3FC380',
+      winToggles: labels.map(([k,label])=>({ key:k, label, on: win[k],
+        toggle: ()=> this.setState(s=>({win: Object.assign({}, s.win, {[k]: !s.win[k]})})) })),
+      tabs: tabs.map(t=>({ key:t, label:t, pick: ()=> this.setState({tab:t}),
+        bg: this.state.tab===t ? '#FFFFFF' : 'transparent',
+        bd: this.state.tab===t ? '#D0D5DC' : 'transparent',
+        fg: this.state.tab===t ? '#1F2430' : '#5A6272' })),
+      tabBody: this.tabBody(),
+      relT1: this.state.relTier===1, relT2: this.state.relTier===2, relT3: this.state.relTier===3,
+      stdT1: this.state.stdTier===1, stdT2: this.state.stdTier===2, stdT3: this.state.stdTier===3,
+      inW: IN_TIERS[this.state.inTier][0], inH: IN_TIERS[this.state.inTier][1],
+      inLeft: 960 - IN_TIERS[this.state.inTier][0]/2, inTop: 954 - IN_TIERS[this.state.inTier][1],
+      inTierCtl: this.seg('inTier', this.state.inTier, [[1,'I1 · 880×280'],[2,'I2 · 700×224'],[3,'I3 · 560×180']]),
+      inOpts: [
+        ['inAxis','축 라벨', this.state.inAxis ?? (IN_TIERS[this.state.inTier][1] >= 240)],
+        ['inWatermark','속도 · 기어 워터마크', this.state.inWatermark],
+        ['inBars','입력 바 (CLU · BRK · THR)', this.state.inBars],
+        ['inWheel','휠 패널 표시', this.state.inWheel],
+      ].map(([k,label,on])=>({ key:k, label, on, toggle: ()=> this.setState({[k]: !on}) })),
+      relRowsXs: this.relRows(2),
+      stdRowsXs: this.stdRows(240 - 18),
+      barItemsXs: this.barItems(true).slice(0,2),
+      relTierCtl: this.seg('relTier', this.state.relTier, [[1,'T1 · 560×320'],[2,'T2 · 420×220'],[3,'T3 · 320×160']]),
+      stdTierCtl: this.seg('stdTier', this.state.stdTier, [[1,'T1 · 700×460'],[2,'T2 · 520×340'],[3,'T3 · 380×240']]),
+      wheelCtl: this.seg('wheel', this.state.wheel ?? 'ring', [['ring','원형 림'],['photo','Ascher 사진']]),
+      wheelCtlDim: this.state.inWheel === false ? 0.38 : 1,
+      wheelCtlHit: this.state.inWheel === false ? 'none' : 'auto',
+      deltaRefCtl: this.seg('dRef', this.state.dRef ?? this.props.deltaRef ?? 'pb', [['pb','PB'],['sb','SB'],['last','LAST']]),
+      arrBoxes: this.arrangeBoxes(),
+      relRows: win.relative ? this.relRows() : [],
+      relRowsSm: this.relRows(3),
+      stdRows: win.standings ? this.stdRows() : [],
+      stdRowsSm: this.stdRows(340 - 28 - 24),
+      barItems: this.barItems(), barItemsSm: this.barItems(true),
+      remainText: remainStr(rem), remainColor: rem>0 && rem<300 ? P.urgent : P.text,
+      trackTempLive: this.wxLive().track,
+      wxL: this.wxLive(),
+      wx: win.weather ? [
+        {key:'a',k:'노면온도',v:(32.4+Math.sin(this.t/40)*0.3).toFixed(1)+' °C'},
+        {key:'b',k:'대기온도',v:'24.1 °C'},
+        {key:'c',k:'습도',v:'48 %'},
+        {key:'d',k:'기압',v:'29.21 inHg'},
+        {key:'e',k:'공기밀도',v:'1.164 kg/m³'},
+        {key:'f',k:'하늘',v:'구름 조금'},
+        {key:'g',k:'안개',v:'0 %'},
+        {key:'h',k:'시각',v:'14:23'},
+      ] : [],
+    };
+  }
+
+  // 날씨 값도 배경 영상 시각으로 구동 — 74s 루프에서 같은 위상으로 반복된다
+  wxLive(){
+    const vt = this.bgVideo && !this.bgVideo.paused ? this.bgVideo.currentTime : this.t;
+    const w = vt/74*Math.PI*2;                       // 루프 1회 = 1주기
+    const track = 32.4 + Math.sin(w)*1.4 + Math.sin(w*3)*0.3;
+    const air = 24.1 + Math.sin(w + 0.9)*0.8;
+    const humid = 48 + Math.sin(w*2 + 1.6)*5;
+    const press = 29.21 + Math.sin(w + 2.4)*0.06;
+    const dens = 1.164 - (air - 24.1)*0.004 + (press - 29.21)*0.03;
+    const fog = Math.max(0, Math.sin(w*2 - 1.2))*3;
+    const windKmh = 15 + Math.sin(w*1.5)*6;
+    const windRot = (206 + Math.sin(w)*34 + 360) % 360;  // 불어가는 방위
+    const DIRS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+    return {
+      track: track.toFixed(1), air: air.toFixed(1),
+      // 캡 아크 굵기 = 3.0 + t×3.5 (t = windKmh/30) — 풍속을 그래픽에 인코딩
+      windArcW: (3 + (windKmh/30)*3.5).toFixed(1),
+      ...prefix('track', series(u => 32.4 + Math.sin(u)*1.4 + Math.sin(u*3)*0.3, w, 29.4, 34.2, 238, 24, 2)),
+      ...prefix('air', series(u => 24.1 + Math.sin(u + 0.9)*0.8, w, 23.0, 25.2, 82, 18, 2)),
+      trackRange: '29.4 – 34.2',
+      humid: String(Math.round(humid)), press: press.toFixed(2), dens: dens.toFixed(3),
+      fog: fog.toFixed(0), wind: String(Math.round(windKmh)),
+      windRot: windRot.toFixed(1), windSpin: 'rotate('+(windRot-206).toFixed(1)+'deg)',
+      windDir: 'to ' + DIRS[Math.round(windRot/22.5) % 16],
+      trackDelta: '▲ ' + (track - 29.6).toFixed(1),
+      airDelta: '▲ ' + (air - 23.1).toFixed(1),
+    };
+  }
+
+  // 리모컨 탭 본문 — 원본 XAML 행 구성을 그대로 옮긴 정적 폼
+  tabBody(){
+    const R = React.createElement;
+    const sec = t => R('div',{key:'s'+t,style:{font:'700 11px Pretendard',color:'#5A6272',margin:'10px 0 3px 2px'}},t);
+    const label = t => R('span',{style:{fontSize:13,color:'#1F2430',width:60,flex:'none'}},t);
+    const row = (k,children) => R('div',{key:k,style:{display:'flex',alignItems:'center',gap:6,margin:'4px 0'}},children);
+    const box = (w,t) => R('span',{style:{width:w,height:26,boxSizing:'border-box',border:'1px solid #D0D5DC',borderRadius:4,background:'#fff',fontSize:12,color:'#1F2430',display:'flex',alignItems:'center',padding:'0 9px'}},t);
+    const btn = t => R('span',{style:{height:26,boxSizing:'border-box',border:'1px solid #D0D5DC',borderRadius:4,background:'#fff',fontSize:12,color:'#1F2430',display:'flex',alignItems:'center',padding:'0 12px'}},t);
+    const slider = v => R('span',{style:{flex:1,height:4,borderRadius:2,background:'#E3E6EB',position:'relative'}},
+      R('span',{style:{position:'absolute',left:0,top:0,bottom:0,width:v,background:'#4AA3FF',borderRadius:2}}),
+      R('span',{style:{position:'absolute',left:v,top:-5,width:12,height:14,marginLeft:-6,borderRadius:3,background:'#fff',border:'1px solid #B6BCC6'}}));
+    const chk = (t,on)=> R('label',{key:t,style:{display:'flex',alignItems:'center',gap:6,fontSize:13,color:'#1F2430',margin:'5px 12px 5px 0'}},
+      R('span',{style:{width:14,height:14,borderRadius:3,boxSizing:'border-box',border:'1px solid '+(on?'#4AA3FF':'#B6BCC6'),background:on?'#4AA3FF':'#fff',color:'#fff',fontSize:10,display:'flex',alignItems:'center',justifyContent:'center'}}, on?'✓':''), t);
+    const chkRow = (k,list)=> R('div',{key:k,style:{display:'flex',flexWrap:'wrap'}}, list.map(([t,on])=>chk(t,on)));
+    const common = pfx => [
+      row(pfx+'a',[label('투명도'), slider('100%')]),
+      row(pfx+'b',[label('배치'), box(96,'1번 화면'), box(120,'좌 · 상'), btn('이동')]),
+      row(pfx+'c',[label('크기'), box(66,'1040'), R('span',{style:{fontSize:11,color:'#5A6272'}},'×'), box(66,'330'), R('span',{style:{flex:1}}), btn('적용'), btn('기본값')]),
+    ];
+    switch(this.state.tab){
+      case '일반': return R('div',null,
+        sec('텔레메트리 소스'),
+        row('src',[box(280,'합성 (Mock)'), btn('새로고침'), btn('파일…')]),
+        sec('모양'),
+        row('look',[label('폰트'), box(150,'JetBrains Mono'), label('배경'), box(150,'미드나잇')]),
+        sec('공통'),
+        row('alpha',[label('전체 투명도'), slider('100%'), R('span',{style:{fontSize:12,color:'#5A6272'}},'100%')]),
+        row('place',[label('리모컨 배치'), box(96,'1번 화면'), box(120,'우 · 하'), btn('이동')]),
+        R('div',{style:{display:'flex',alignItems:'center',marginTop:14}},
+          R('span',{style:{flex:1,fontSize:11,color:'#5A6272'}},'창 위치는 그대로 두고 나머지 설정만 되돌린다.'), btn('전체 기본값')));
+      case '입력': return R('div',null,
+        common('in'),
+        row('tw',[label('시간축'), slider('22%'), R('span',{style:{fontSize:12,color:'#5A6272',width:32}},'8초'),
+          R('span',{style:{display:'flex',gap:2}},['2','5','8','15','30'].map(t=>R('span',{key:t,style:{width:30,height:24,border:'1px solid #D0D5DC',borderRadius:4,background:t==='8'?'#EEF1F5':'#fff',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center'}},t)))]),
+        row('th',[label('선 굵기'), slider('21%'), R('span',{style:{fontSize:12,color:'#5A6272',width:34}},'×1.0'), R('span',{style:{fontSize:11,color:'#5A6272'}},'그리드'), box(56,'5')]),
+        sec('트레이스'), chkRow('tr',[['스로틀',true],['브레이크',true],['클러치',true],['조향',true]]),
+        sec('인풋 바'), chkRow('bar',[['표시',true],['스로틀',true],['브레이크',true],['클러치',true],['값 (%)',true]]),
+        sec('표시 요소'), chkRow('el',[['상단 헤더 (상태 · 범례)',true],['기어 · 속도 표시',true],['스티어링 휠',true],['진단: FPS · 수신율',false]]));
+      case 'Relative': return R('div',null, common('rel'),
+        sec('세션 바'), chkRow('sb',[['세션 종류',true],['깃발',true],['순위',true],['랩',true],['남은 랩',true],['SOF',true],['INC',true],['베스트 랩',false],['노면 온도',false],['남은 시간',true]]),
+        sec('표시'), chkRow('rd',[['드라이버 풀네임',false],['차 로고',true]]),
+        R('div',{style:{marginTop:10}}, btn('로고 폴더 열기')));
+      case 'Standings': return R('div',null, common('std'),
+        sec('세션 바'), chkRow('sb2',[['세션 종류',true],['깃발',true],['순위',true],['랩',true],['남은 랩',true],['SOF',true],['INC',true],['남은 시간',true]]),
+        sec('표시'), chkRow('sd',[['드라이버 풀네임',true],['차 로고',true],['CLS 열',true],['떠난 드라이버 기록 유지',true]]),
+        R('div',{style:{marginTop:10}}, btn('로고 폴더 열기')));
+      case '날씨 · 트랙': return R('div',null, common('wx'));
+      default: return R('div',null, common('sp'),
+        R('div',{style:{marginTop:14,fontSize:11,lineHeight:1.7,color:'#5A6272'}},'기본 크기 1920×480. 화면 전체 폭에 걸쳐 두면 좌/우 막대가 화면 양 끝에 온다. 1대 앰버 · 2대 빨강.'));
+    }
+  }
+}
+</script>
+</body>
+</html>
