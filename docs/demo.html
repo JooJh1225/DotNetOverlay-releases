@@ -1074,7 +1074,12 @@ class Component extends DCLogic {
       const x = x0 + 10 + i*35, cx = x + barW/2;
       g.fillStyle = '#242C3C'; g.beginPath(); g.roundRect(x,top,barW,barH,4); g.fill();
       const fh = barH*Math.max(0,Math.min(1,v));
-      if(fh>0){ g.fillStyle = col; g.beginPath(); g.roundRect(x,top+barH-fh,barW,fh,4); g.fill(); }
+      if(fh>0){
+        // 채움은 사각이되 트랙 라운드로 클립 — 낮을 때 직각, 100%에서 트랙 곡률(앱 §4와 동일)
+        g.save(); g.beginPath(); g.roundRect(x,top,barW,barH,4); g.clip();
+        g.fillStyle = col; g.fillRect(x, top+barH-fh, barW, fh);
+        g.restore();
+      }
       g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillStyle = '#E6EAF0'; g.font = '600 13px '+FONT;
       g.fillText(String(Math.round(v*100)), cx, top+barH+7+9);
