@@ -73,6 +73,8 @@ header nav a:hover{color:var(--fg)}
 }
 .btn-primary{background:var(--accent);color:#fff}
 .btn-primary:hover{background:var(--accent-700);color:#fff}
+.btn-ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.btn-ghost:hover{border-color:var(--fg-3);color:var(--fg)}
 .btn[aria-disabled="true"]{opacity:.4;pointer-events:none}
 .relmeta{margin-top:14px;font-family:var(--mono);font-size:12px;color:var(--fg-3)}
 
@@ -128,6 +130,11 @@ footer a{color:var(--fg-2)}
     </p>
     <div class="cta">
       <a class="btn btn-primary" id="dl" href="https://github.com/JooJh1225/DotNetOverlay-releases/releases"><span class="en">Download</span><span class="ko">내려받기</span></a>
+      <!-- SimHub 대시는 앱 릴리스와 따로 둔다 — 릴리스로 만들면 위 버튼(첫 릴리스)과
+           앱 업데이터(최신 릴리스)가 대시를 앱으로 착각한다. -->
+      <a class="btn btn-ghost" href="downloads/SimpleDash.simhubdash" download
+         title="Ascher Racing Artura Ultimate 4&quot; VoCore (800×480) · iRacing race &amp; setup pages · SimHub 9.12.4">
+        <span class="en">SimHub Dash</span><span class="ko">SimHub 대시</span></a>
     </div>
     <p class="relmeta" id="relmeta"></p>
   </div>
@@ -277,10 +284,15 @@ var LANG = (function () {
     .then(function (list) {
       var rel = (list || []).filter(function (x) { return !x.draft; })[0];
       if (!rel) throw 0;
+      // 배포물은 exe 하나다(1.4.0~) — exe 를 먼저 찾고, 옛 릴리스만 zip 으로 물러난다.
+      // update.exe 는 앱이 쓰는 업데이터라 사람이 받을 파일이 아니다.
+      var assets = rel.assets || [];
+      var pick = assets.filter(function (a) { return /\.exe$/i.test(a.name) && !/^update\.exe$/i.test(a.name); })[0]
+        || assets.filter(function (a) { return /\.zip$/i.test(a.name); })[0] || null;
       state = {
         tag: rel.tag_name, html_url: rel.html_url, prerelease: rel.prerelease,
         date: new Date(rel.published_at),
-        zip: (rel.assets || []).filter(function (a) { return /\.zip$/i.test(a.name); })[0] || null
+        zip: pick
       };
       render(LANG.get());
     })
