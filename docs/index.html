@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DotNetOverlay — iRacing real-time telemetry overlay</title>
+<meta name="description" content="Eight overlay windows over the game, controlled from one remote.">
+<meta property="og:title" content="DotNetOverlay">
+<meta property="og:description" content="iRacing real-time telemetry overlay for Windows.">
+<meta property="og:image" content="https://joojh1225.github.io/DotNetOverlay-releases/poster.webp">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/app.ico" sizes="any">
+<link rel="apple-touch-icon" href="assets/icon-256.png">
+
+<style>
+@font-face{font-family:'JetBrains Mono';src:url('Fonts/JetBrainsMono-Regular.ttf') format('truetype');font-weight:400;font-display:swap}
+@font-face{font-family:'JetBrains Mono';src:url('Fonts/JetBrainsMono-Bold.ttf') format('truetype');font-weight:700;font-display:swap}
+@font-face{font-family:'Pretendard';src:url('Fonts/Pretendard-Regular.otf') format('opentype');font-weight:400;font-display:swap}
+@font-face{font-family:'Pretendard';src:url('Fonts/Pretendard-Bold.otf') format('opentype');font-weight:700;font-display:swap}
+
+:root{
+  --bg:#f3f2f2; --surface:#fff; --line:#d7d3d3; --line-soft:#eae7e7;
+  --fg:#201e1d; --fg-2:#605d5d; --fg-3:#9b9797;
+  --accent:#ec3013; --accent-700:#ae1800; --accent-50:#fff2ef;
+  --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  --sans:'Pretendard',system-ui,-apple-system,'Malgun Gothic',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--fg);
+  font-family:var(--sans);font-size:16px;line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px;margin:0 auto;padding:0 24px}
+a{color:var(--accent-700)}
+a:hover{color:var(--accent)}
+h1,h2,h3{line-height:1.3;letter-spacing:-.015em;margin:0}
+code{font-family:var(--mono);font-size:.87em;background:var(--line-soft);padding:2px 6px;border-radius:4px}
+.tag{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3)}
+
+/* 두 언어를 나란히 담아 두고 html[lang] 이 하나만 보여준다 — 문서 전체 재렌더가 없다 */
+html[lang="en"] .ko{display:none}
+html[lang="ko"] .en{display:none}
+
+header{
+  position:sticky;top:0;z-index:50;background:rgba(243,242,242,.85);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--line);
+}
+header .wrap{display:flex;align-items:center;gap:24px;height:56px}
+.brand{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--fg);text-decoration:none}
+.brand span{color:var(--accent)}
+header nav{margin-left:auto;display:flex;align-items:center;gap:22px;font-size:13px}
+header nav a{color:var(--fg-2);text-decoration:none}
+header nav a:hover{color:var(--fg)}
+
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface)}
+.lang button{
+  padding:4px 10px;border:0;background:none;cursor:pointer;
+  font-family:var(--mono);font-size:11px;font-weight:700;color:var(--fg-3);
+}
+.lang button+button{border-left:1px solid var(--line)}
+.lang button.on{background:var(--fg);color:var(--surface)}
+
+.hero{padding:76px 0 60px;text-align:center}
+.hero h1{font-size:clamp(32px,5.5vw,54px);font-weight:700;letter-spacing:-.03em}
+.hero p{margin:18px auto 0;max-width:560px;color:var(--fg-2);font-size:17px}
+.cta{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+.btn{
+  display:inline-flex;align-items:center;padding:12px 26px;border-radius:8px;
+  border:1px solid transparent;text-decoration:none;cursor:pointer;transition:.15s;
+  font-family:var(--sans);font-size:15px;font-weight:700;
+}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-700);color:#fff}
+.btn-ghost{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.btn-ghost:hover{border-color:var(--fg-3);color:var(--fg)}
+.btn[aria-disabled="true"]{opacity:.4;pointer-events:none}
+.relmeta{margin-top:14px;font-family:var(--mono);font-size:12px;color:var(--fg-3)}
+
+section{padding:60px 0;border-top:1px solid var(--line)}
+section h2{font-size:25px;font-weight:700;margin:6px 0 28px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.card h3{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--accent);margin-bottom:7px}
+.card p{margin:0;font-size:14px;color:var(--fg-2);line-height:1.6}
+
+.specs{width:100%;border-collapse:collapse;font-size:14px}
+.specs th,.specs td{text-align:left;padding:13px 4px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+.specs th{width:180px;font-size:14px;font-weight:700;color:var(--fg-3)}
+.specs td{color:var(--fg-2)}
+.specs tr:last-child th,.specs tr:last-child td{border-bottom:0}
+
+ul.plain{margin:0;padding-left:19px;color:var(--fg-2);font-size:14px}
+ul.plain li{margin-bottom:6px}
+
+footer{border-top:1px solid var(--line);padding:36px 0 56px;font-size:13px;color:var(--fg-3)}
+footer p{margin:0 0 8px}
+footer a{color:var(--fg-2)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="#top">DOT<span>NET</span>OVERLAY</a>
+    <nav>
+      <a href="#windows"><span class="en">Windows</span><span class="ko">창</span></a>
+      <a href="https://github.com/JooJh1225/DotNetOverlay-releases">GitHub</a>
+      <span class="lang" role="group" aria-label="Language">
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="ko">KO</button>
+      </span>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap" id="top">
+
+  <div class="hero">
+    <p class="tag"><span class="en">iRacing · Windows · Beta</span><span class="ko">iRacing · Windows · 베타</span></p>
+    <h1>
+      <span class="en">Only what you need while driving,<br>right on screen.</span>
+      <span class="ko">주행 중에 필요한 것만,<br>화면 위에.</span>
+    </h1>
+    <p>
+      <span class="en">Eight windows, one remote — toggle them, size them, choose what each shows.</span>
+      <span class="ko">여덟 개의 창을 리모컨 하나로 — 켜고 끄고, 크기와 표시 요소까지.</span>
+    </p>
+    <div class="cta">
+      <a class="btn btn-primary" id="dl" href="https://github.com/JooJh1225/DotNetOverlay-releases/releases"><span class="en">Download</span><span class="ko">내려받기</span></a>
+      <!-- SimHub 대시 · 플러그인은 앱 릴리스와 따로 Pages 파일로 둔다 — 릴리스로 만들면 위 버튼(첫 릴리스)과
+           앱 업데이터(최신 릴리스)가 대시를 앱으로 착각한다. -->
+      <a class="btn btn-ghost" href="downloads/SimpleDash.simhubdash" download
+         title="SimpleDash v1.2 · Ascher Racing Artura Ultimate 4&quot; VoCore (800×480) · iRacing race, fuel &amp; setup pages, pit menu · SimHub 9.12+">
+        <span class="en">SimHub Dash</span><span class="ko">SimHub 대시</span></a>
+      <a class="btn btn-ghost" href="downloads/DotNetOverlayPlugin.dll" download
+         title="DotNetOverlay SimHub plugin 1.0.0 · SimpleDash pit menu commands &amp; wheel rotary · copy into the SimHub folder with SimHub closed">
+        <span class="en">SimHub Plugin</span><span class="ko">SimHub 플러그인</span></a>
+    </div>
+    <p class="relmeta" id="relmeta"></p>
+  </div>
+
+</div>
+
+<div class="wrap">
+
+  <section id="windows">
+    <h2><span class="en">Eight windows</span><span class="ko">여덟 개의 창</span></h2>
+    <div class="grid">
+      <div class="card"><h3>INPUT</h3><p>
+        <span class="en">Throttle · brake · clutch bars, input traces, steering wheel</span>
+        <span class="ko">스로틀 · 브레이크 · 클러치 바와 인풋 트레이스, 스티어링 휠</span></p></div>
+      <div class="card"><h3>APPROACH</h3><p>
+        <span class="en">How close the car behind is, read from a single marker</span>
+        <span class="ko">뒤차가 얼마나 다가왔는지를 마커 위치 하나로</span></p></div>
+      <div class="card"><h3>DELTA</h3><p>
+        <span class="en">Against a reference lap — left is gaining, right is losing</span>
+        <span class="ko">기준 랩 대비 왼쪽이 벌고 오른쪽이 잃습니다</span></p></div>
+      <div class="card"><h3>RELATIVE</h3><p>
+        <span class="en">Live gaps to the cars ahead and behind, with lap difference</span>
+        <span class="ko">앞뒤 차와의 실시간 시간차와 랩 차이</span></p></div>
+      <div class="card"><h3>STANDINGS</h3><p>
+        <span class="en">Class standings · projected ±iR · LAST column</span>
+        <span class="ko">클래스별 순위 · ±iR 예상 · LAST 열</span></p></div>
+      <div class="card"><h3>WEATHER</h3><p>
+        <span class="en">Track temp with 10-minute trend, air · humidity · pressure · density</span>
+        <span class="ko">트랙 온도와 10분 추이, 대기 · 습도 · 기압 · 밀도</span></p></div>
+      <div class="card"><h3>WIND</h3><p>
+        <span class="en">The sector rotates to the wind heading, arc width is speed. No backing — the game shows through</span>
+        <span class="ko">불어가는 방위로 섹터가 돌고, 아크 굵기가 풍속. 면이 없어 게임이 그대로 비칩니다</span></p></div>
+      <div class="card"><h3>SPOTTER</h3><p>
+        <span class="en">Cars alongside on left and right rails — position is ahead/behind, length is overlap, color is danger</span>
+        <span class="ko">옆 차를 좌우 레일에. 위치가 앞뒤, 길이가 겹침, 색이 위험도</span></p></div>
+    </div>
+  </section>
+
+  <section id="requirements">
+    <h2><span class="en">Requirements</span><span class="ko">요구 사항</span></h2>
+    <table class="specs">
+      <tr><th>OS</th><td>Windows 10 / 11 (x64)</td></tr>
+      <tr><th><span class="en">Runtime</span><span class="ko">런타임</span></th><td>
+        <span class="en">None — self-contained build</span>
+        <span class="ko">불필요 — 자체 포함 빌드</span></td></tr>
+      <tr><th><span class="en">iRacing live</span><span class="ko">iRacing 라이브</span></th><td>
+        <span class="en"><code>irsdkEnableMem=1</code> in <code>Documents\iRacing\app.ini</code></span>
+        <span class="ko"><code>Documents\iRacing\app.ini</code> 에 <code>irsdkEnableMem=1</code></span></td></tr>
+      <tr><th><span class="en">Telemetry source</span><span class="ko">텔레메트리 소스</span></th><td>
+        <span class="en">iRacing live · <code>.ibt</code> replay · synthetic (Mock)</span>
+        <span class="ko">iRacing 라이브 · <code>.ibt</code> 재생 · 합성(Mock)</span></td></tr>
+      <tr><th><span class="en">Settings</span><span class="ko">설정 저장</span></th><td><code>%AppData%\SimRacingOverlay\settings.json</code></td></tr>
+    </table>
+  </section>
+
+  <section id="report">
+    <h2><span class="en">Report an issue</span><span class="ko">문제 신고</span></h2>
+    <ul class="plain">
+      <li><span class="en">Version · which windows were on · which telemetry source (live / Mock / .ibt)</span>
+          <span class="ko">버전 · 어느 창을 켠 상태에서 · 어떤 텔레메트리 소스로 (라이브 / Mock / .ibt)</span></li>
+      <li><span class="en">GPU and monitor setup (resolution · scaling · multi-monitor)</span>
+          <span class="ko">그래픽 카드와 모니터 구성 (해상도 · 배율 · 다중 모니터)</span></li>
+      <li><span class="en">A screenshot if something renders wrong</span>
+          <span class="ko">이상하게 그려졌다면 스크린샷</span></li>
+      <li><span class="en">Render error log — <code>%TEMP%\SimRacingOverlay.log</code></span>
+          <span class="ko">렌더 오류 로그 — <code>%TEMP%\SimRacingOverlay.log</code></span></li>
+    </ul>
+    <div class="cta" style="justify-content:flex-start;margin-top:24px">
+      <a class="btn btn-primary" href="https://github.com/JooJh1225/DotNetOverlay-releases/issues/new"><span class="en">Open an issue</span><span class="ko">이슈 남기기</span></a>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <p><span class="en">A personal-use overlay. Bundled fonts are under the SIL Open Font License.</span>
+       <span class="ko">개인 사용 목적으로 만든 오버레이입니다. 포함된 폰트는 SIL Open Font License.</span></p>
+    <p><span class="en">iRacing is a trademark of iRacing.com Motorsport Simulations, LLC.</span>
+       <span class="ko">iRacing 은 iRacing.com Motorsport Simulations, LLC 의 상표입니다.</span></p>
+    <p style="margin-top:14px"><a href="https://github.com/JooJh1225/DotNetOverlay-releases">GitHub</a></p>
+  </div>
+</footer>
+
+<script>
+// ── 언어 — 영문 기본, 선택은 저장. 본문은 .en/.ko 쌍을 CSS 가 걸러서 재렌더가 없고,
+//    스크립트가 만드는 글자(릴리스 버튼·메타)만 다시 그린다.
+var LANG = (function () {
+  var KEY = 'dno-lang';
+  var cur = 'en';
+  try { if (localStorage.getItem(KEY) === 'ko') cur = 'ko'; } catch (e) {}
+  var TITLE = {
+    en: 'DotNetOverlay — iRacing real-time telemetry overlay',
+    ko: 'DotNetOverlay — iRacing 실시간 텔레메트리 오버레이'
+  };
+  var listeners = [];
+  function apply() {
+    document.documentElement.lang = cur;
+    document.title = TITLE[cur];
+    var bs = document.querySelectorAll('.lang button');
+    for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i].dataset.lang === cur);
+    for (var j = 0; j < listeners.length; j++) listeners[j](cur);
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.lang button');
+    if (!b) return;
+    cur = b.dataset.lang === 'ko' ? 'ko' : 'en';
+    try { localStorage.setItem(KEY, cur); } catch (e2) {}
+    apply();
+  });
+  apply();
+  return { get: function () { return cur; }, on: function (f) { listeners.push(f); f(cur); } };
+})();
+
+// ── 릴리스를 GitHub 에서 읽는다 — 버전을 페이지에 박아 두면 릴리스마다 잊는다.
+//    /releases/latest 는 프리릴리즈와 초안을 건너뛰므로 목록에서 초안 아닌 첫 항목을 쓴다.
+(function () {
+  var meta = document.getElementById('relmeta');
+  var btn = document.getElementById('dl');
+  var S = {
+    en: { down: 'Download ', open: 'Open ', pre: 'Pre-release · ', prep: 'Coming soon' },
+    ko: { downTail: ' 내려받기', openTail: ' 릴리스 열기', pre: '프리릴리즈 · ', prep: '준비 중' }
+  };
+  var state = null;   // null = 로딩 전, false = 실패, 객체 = 릴리스
+  function render(lang) {
+    var s = S[lang];
+    if (state === false) {
+      meta.textContent = s.prep;
+      btn.setAttribute('aria-disabled', 'true');
+      return;
+    }
+    if (!state) return;   // 아직 로딩 전 — HTML 의 기본 글자를 둔다
+    btn.removeAttribute('aria-disabled');
+    btn.href = state.zip ? state.zip.browser_download_url : state.html_url;
+    var verb = state.zip
+      ? (lang === 'en' ? s.down + state.tag : state.tag + s.downTail)
+      : (lang === 'en' ? s.open + state.tag : state.tag + s.openTail);
+    btn.textContent = verb;
+    var d = state.date;
+    meta.textContent = (state.prerelease ? s.pre : '') +
+      (state.zip ? (state.zip.size / 1048576).toFixed(0) + 'MB · ' : '') +
+      d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' +
+      String(d.getDate()).padStart(2, '0') + ' · win-x64';
+  }
+  fetch('https://api.github.com/repos/JooJh1225/DotNetOverlay-releases/releases?per_page=10')
+    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+    .then(function (list) {
+      // 앱 릴리스만 — 태그가 v 로 시작한다. SimHub 대시 등 부속 릴리스(simpledash-v…)가 목록 맨 앞에
+      // 와도 메인 버튼이 그걸 앱으로 집지 않게 한다(부속 릴리스는 --latest=false 로 만들어 업데이터도 피한다).
+      var rel = (list || []).filter(function (x) { return !x.draft && /^v\d/i.test(x.tag_name); })[0];
+      if (!rel) throw 0;
+      // 배포물은 exe 하나다(1.4.0~) — exe 를 먼저 찾고, 옛 릴리스만 zip 으로 물러난다.
+      // update.exe 는 앱이 쓰는 업데이터라 사람이 받을 파일이 아니다.
+      var assets = rel.assets || [];
+      var pick = assets.filter(function (a) { return /\.exe$/i.test(a.name) && !/^update\.exe$/i.test(a.name); })[0]
+        || assets.filter(function (a) { return /\.zip$/i.test(a.name); })[0] || null;
+      state = {
+        tag: rel.tag_name, html_url: rel.html_url, prerelease: rel.prerelease,
+        date: new Date(rel.published_at),
+        zip: pick
+      };
+      render(LANG.get());
+    })
+    .catch(function () { state = false; render(LANG.get()); });
+  LANG.on(render);
+})();
+</script>
+
+</body>
+</html>
