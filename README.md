@@ -1,15 +1,18 @@
 # DotNetOverlay
 
-iRacing 실시간 텔레메트리 오버레이. Windows 전용.
+Real-time telemetry overlay for iRacing. Windows only.
 
-게임 위에 떠 있는 **입력 · 접근 · 델타 · Relative · Standings · 날씨 · 바람 · 스포터**
-여덟 개의 창을 **리모컨** 하나로 켜고 끄고, 크기와 표시 요소까지 고릅니다.
-.NET 설치는 필요 없습니다 — 자체 포함 빌드(win-x64)입니다.
+Twelve windows float over the game — **Input · RPM · Approach · Hazard Ahead · Delta ·
+Relative · Standings · iR Delta · Fuel · Weather · Wind · Spotter** — and you turn them on,
+size them and choose what each shows from one settings window.
+No .NET install needed: it is a self-contained build (win-x64).
 
-> 실행 파일 배포와 문제 신고 전용 저장소입니다.
+> This repository only hosts the release builds and issue reports.
 
-**[→ 홈페이지](https://joojh1225.github.io/DotNetOverlay-releases/)**
-설치 안내 · 요구 사항 · 문제 신고, 그리고 브라우저에서 바로 돌려보는 재현.
+**[→ Website](https://joojh1225.github.io/DotNetOverlay-releases/)** — what each window shows, requirements, how to report an issue.
 
-**[→ 최신 버전 받기](../../releases)** — `DotNetOverlay-vX.Y.Z-win-x64.zip`
-지금은 테스트용 베타(프리릴리즈)만 있습니다.
+**[→ Download the latest version](../../releases/latest)** — `DotNetOverlay-vX.Y.Z-win-x64.exe`, a single file with no installer. It updates itself on launch.
+
+Before the first run, add `irsdkEnableMem=1` to `Documents\iRacing\app.ini` for live telemetry.
+
+**[→ Report an issue](../../issues/new)**
