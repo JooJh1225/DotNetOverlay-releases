@@ -24,7 +24,7 @@
 | 경로 | 용도 |
 |---|---|
 | `index.html` | 랜딩. 앱 디자인 시스템(앱 저장소 `DESIGN.md`)의 블랙 테마 · 글자 세 단 · Exo 2 를 씁니다 |
-| `poster.webp` | 옛 랜딩 히어로 포스터 (33KB) — 지금은 `og:image` 로만 씁니다 |
+| `og.png` | 링크 미리보기 카드 (1200×630, `og:image`) — 로고 + 이름. 바꿀 땐 파일 이름도 바꾸십시오(카톡 · 디스코드가 주소로 캐시합니다) |
 | `preview.webp` | 8초 애니메이션 (8.6MB) — **아무 데서도 쓰지 않습니다** |
 | `assets/app.ico`, `assets/icon-256.png` | 파비콘 · 애플 터치 아이콘 — 앱과 같은 트레이스 그래프 N 로고(앱 `src/DotNetOverlay/assets/app.ico` 그대로) |
 | `downloads/` | SimHub 대시 · 플러그인 — 앱 릴리스와 따로 둔다(릴리스로 만들면 랜딩 버튼 · 앱 업데이터가 앱으로 착각한다) |
