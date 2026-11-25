@@ -121,6 +121,13 @@ ul.plain{margin:0;padding-left:20px;max-width:40em;color:var(--text-soft);font-s
 ul.plain li{margin-bottom:8px}
 ul.plain li::marker{color:var(--text-label)}
 
+/* 패치 노트 — #patchnotes 가 주소에 있을 때만 그 판 하나만 보인다(다른 링크를 누르면 랜딩으로 돌아온다) */
+#patchnotes:not(:target){display:none}
+main:has(#patchnotes:target)>:not(#patchnotes){display:none}
+#patchnotes{border-top:0}
+.rows dt small{display:block;font-weight:400;letter-spacing:0;color:var(--text-label)}
+.rows dd ul.plain{margin:0}
+
 footer{border-top:1px solid var(--border);padding:40px 0 64px;font-size:13px;color:var(--text-label)}
 footer p{margin:0 0 8px}
 footer a{color:var(--text-soft)}
@@ -135,7 +142,7 @@ footer a{color:var(--text-soft)}
   section{padding:48px 0 56px}
   .rows>div{grid-template-columns:1fr;padding:12px 16px}
 }
-@media (max-width:420px){header nav a[href="#windows"],header nav a[href$="/releases"]{display:none}}
+@media (max-width:420px){header nav a[href="#windows"],header nav a[href="#patchnotes"]{display:none}}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
 </style>
 </head>
@@ -146,7 +153,7 @@ footer a{color:var(--text-soft)}
     <a class="brand" href="#top"><img src="assets/logo-32.svg" alt="" width="28" height="28">DotNetOverlay</a>
     <nav>
       <a href="#windows"><span class="en">Overlays</span><span class="ko">오버레이 창</span></a>
-      <a href="https://github.com/JooJh1225/DotNetOverlay-releases/releases"><span class="en">Patch notes</span><span class="ko">패치 노트</span></a>
+      <a href="#patchnotes"><span class="en">Patch notes</span><span class="ko">패치 노트</span></a>
       <a href="https://github.com/JooJh1225/DotNetOverlay-releases">GitHub</a>
       <span class="lang" role="group" aria-label="Language">
         <button type="button" data-lang="en">EN</button>
@@ -271,6 +278,11 @@ footer a{color:var(--text-soft)}
     </div>
   </section>
 
+  <section id="patchnotes">
+    <h2><span class="en">Patch notes</span><span class="ko">패치 노트</span></h2>
+    <dl class="rows" id="notes"><div><dd><span class="en">Loading…</span><span class="ko">불러오는 중…</span></dd></div></dl>
+  </section>
+
 </main>
 
 <footer>
@@ -327,7 +339,56 @@ var LANG = (function () {
     ko: { downTail: ' 내려받기', openTail: ' 릴리스 열기', pre: '프리릴리즈 · ' }
   };
   var state = null;   // null = 로딩 전 또는 실패
+  var releases = null; // 패치 노트 — 같은 응답을 쓴다(비인증 API 는 시간당 60회라 두 번 부르지 않는다)
+  var notes = document.getElementById('notes');
+  function ymd(d) {
+    return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
+  }
+  // 릴리스 본문은 "### English" · "### 한국어" · "### Download" 아래 "- " 줄들이다. 내려받기 칸은 버튼이 맡는다.
+  function bullets(body, lang) {
+    var sec = {}, cur = '';
+    (body || '').split(/\r?\n/).forEach(function (l) {
+      var h = /^#{3,}\s*(.*)/.exec(l);
+      if (h) { cur = h[1].trim(); return; }
+      var m = /^\s*[-*]\s+(.*)/.exec(l);
+      if (m) (sec[cur] = sec[cur] || []).push(m[1]);
+    });
+    var mine = sec[lang === 'ko' ? '한국어' : 'English'];
+    if (mine) return mine;
+    // 언어 칸이 없는 본문 — 내려받기 칸만 빼고 전부
+    return Object.keys(sec).filter(function (k) { return !/^Download/i.test(k); })
+      .reduce(function (a, k) { return a.concat(sec[k]); }, []);
+  }
+  function line(text) {   // `코드` 만 살리고 나머지는 글자 그대로 — innerHTML 을 쓰지 않는다
+    var li = document.createElement('li');
+    text.split('`').forEach(function (part, i) {
+      if (!part) return;
+      if (i % 2) { var c = document.createElement('code'); c.textContent = part; li.appendChild(c); }
+      else li.appendChild(document.createTextNode(part));
+    });
+    return li;
+  }
+  function renderNotes(lang) {
+    if (!releases) return;
+    notes.textContent = '';
+    releases.forEach(function (r) {
+      var row = document.createElement('div');
+      var dt = document.createElement('dt');
+      dt.textContent = r.name || r.tag_name;
+      var sm = document.createElement('small');
+      sm.textContent = ymd(new Date(r.published_at)) + (r.prerelease ? (lang === 'ko' ? ' · 프리릴리즈' : ' · Pre-release') : '');
+      dt.appendChild(sm);
+      var dd = document.createElement('dd');
+      var ul = document.createElement('ul');
+      ul.className = 'plain';
+      bullets(r.body, lang).forEach(function (b) { ul.appendChild(line(b)); });
+      dd.appendChild(ul);
+      row.appendChild(dt); row.appendChild(dd);
+      notes.appendChild(row);
+    });
+  }
   function render(lang) {
+    renderNotes(lang);
     var s = S[lang];
     // 실패(비인증 API 는 IP 당 시간 60회)해도 버튼은 HTML 기본값 /releases 로 살아 있게 둔다
     if (!state) return;
@@ -336,15 +397,15 @@ var LANG = (function () {
       ? (lang === 'en' ? s.down + state.tag : state.tag + s.downTail)
       : (lang === 'en' ? s.open + state.tag : state.tag + s.openTail);
     btn.textContent = verb;
-    var d = state.date;
     meta.textContent = (state.prerelease ? s.pre : '') +
       (state.zip ? (state.zip.size / 1048576).toFixed(0) + 'MB · ' : '') +
-      d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' +
-      String(d.getDate()).padStart(2, '0') + ' · win-x64';
+      ymd(state.date) + ' · win-x64';
   }
-  fetch('https://api.github.com/repos/JooJh1225/DotNetOverlay-releases/releases?per_page=10')
+  fetch('https://api.github.com/repos/JooJh1225/DotNetOverlay-releases/releases?per_page=30')
     .then(function (r) { if (!r.ok) throw 0; return r.json(); })
     .then(function (list) {
+      releases = (list || []).filter(function (x) { return !x.draft; });
+      renderNotes(LANG.get());
       // 앱 릴리스만 — 태그가 v 로 시작한다. SimHub 대시 등 부속 릴리스(simpledash-v…)가 목록 맨 앞에
       // 와도 메인 버튼이 그걸 앱으로 집지 않게 한다(부속 릴리스는 --latest=false 로 만들어 업데이터도 피한다).
       var rel = (list || []).filter(function (x) { return !x.draft && /^v\d/i.test(x.tag_name); })[0];
@@ -361,7 +422,11 @@ var LANG = (function () {
       };
       render(LANG.get());
     })
-    .catch(function () {});
+    .catch(function () {
+      if (releases) return;
+      notes.innerHTML = '<div><dd><span class="en">Couldn’t load the patch notes. <a href="https://github.com/JooJh1225/DotNetOverlay-releases/releases">See them on GitHub</a>.</span>' +
+        '<span class="ko">패치 노트를 불러오지 못했습니다. <a href="https://github.com/JooJh1225/DotNetOverlay-releases/releases">GitHub 에서 보기</a>.</span></dd></div>';
+    });
   LANG.on(render);
 })();
 </script>
