@@ -135,7 +135,7 @@ footer a{color:var(--text-soft)}
   section{padding:48px 0 56px}
   .rows>div{grid-template-columns:1fr;padding:12px 16px}
 }
-@media (max-width:420px){header nav a[href="#windows"]{display:none}}
+@media (max-width:420px){header nav a[href="#windows"],header nav a[href$="/releases"]{display:none}}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
 </style>
 </head>
@@ -146,6 +146,7 @@ footer a{color:var(--text-soft)}
     <a class="brand" href="#top"><img src="assets/logo-32.svg" alt="" width="28" height="28">DotNetOverlay</a>
     <nav>
       <a href="#windows"><span class="en">Overlays</span><span class="ko">오버레이 창</span></a>
+      <a href="https://github.com/JooJh1225/DotNetOverlay-releases/releases"><span class="en">Patch notes</span><span class="ko">패치 노트</span></a>
       <a href="https://github.com/JooJh1225/DotNetOverlay-releases">GitHub</a>
       <span class="lang" role="group" aria-label="Language">
         <button type="button" data-lang="en">EN</button>

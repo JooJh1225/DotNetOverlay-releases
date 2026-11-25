@@ -2,17 +2,13 @@
 
 Real-time telemetry overlay for iRacing. Windows only.
 
-Twelve windows float over the game — **Input · RPM · Approach · Hazard Ahead · Delta ·
-Relative · Standings · iR Delta · Fuel · Weather · Wind · Spotter** — and you turn them on,
-size them and choose what each shows from one settings window.
-No .NET install needed: it is a self-contained build (win-x64).
+## Key Features
 
-> This repository only hosts the release builds and issue reports.
+- **Twelve overlay windows** — Input · RPM · Approach · Hazard Ahead · Delta · Relative · Standings · iR Delta · Fuel · Weather · Wind · Spotter
+- **One settings window** — turn each on, size it and choose what it shows
+- **Single exe, no install** — self-contained (win-x64), no .NET needed, updates itself on launch
 
-**[→ Website](https://joojh1225.github.io/DotNetOverlay-releases/)** — what each window shows, requirements, how to report an issue.
+## Links
 
-**[→ Download the latest version](../../releases/latest)** — `DotNetOverlay-vX.Y.Z-win-x64.exe`, a single file with no installer. It updates itself on launch.
-
-Before the first run, add `irsdkEnableMem=1` to `Documents\iRacing\app.ini` for live telemetry.
-
-**[→ Report an issue](../../issues/new)**
+- **[Website](https://joojh1225.github.io/DotNetOverlay-releases/)**
+- **[Issues](../../issues)**
